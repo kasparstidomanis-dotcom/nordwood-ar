@@ -239,6 +239,16 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   .step h2{font-size:22px}
   .opt{font-size:16px;padding:15px}
 }
+
+  /* open-in-browser panel for in-app browsers (Instagram, Facebook...) on the AR step */
+  .oob{margin:14px 0 6px;padding:16px;border-radius:16px;background:#fff8e6;border:1px solid #f0d58f;text-align:left}
+  .oob__h{margin:0 0 4px;font-weight:700;font-size:17px}
+  .oob__t{margin:0 0 12px;font-size:14px;opacity:.85}
+  .oob__go{display:flex;justify-content:center;width:100%;text-decoration:none}
+  .oob__alt{margin:12px 0 6px;font-size:13px;opacity:.85}
+  .oob__copy{display:flex;gap:6px}
+  .oob__copy input{flex:1;min-width:0;font:inherit;font-size:13px;padding:9px 10px;border:1px solid #e3d3a8;border-radius:10px;background:#fff}
+  .oob__copy button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:0 14px;background:#1d2a20;color:#fff}
 </style>
 </head>
 <body>
@@ -494,6 +504,13 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
         <div class="mdots" id="mDots"></div>
       </div>
       <button type="button" class="btn ar-go" id="arGo">See it in my yard <svg><use href="#arr"/></svg></button>
+      <div class="oob" id="oob" hidden>
+        <p class="oob__h">One last tap to see it in your yard</p>
+        <p class="oob__t">AR needs your phone's own browser. <span id="oobWhy">You're inside the app's browser right now.</span></p>
+        <a class="btn oob__go" id="oobGo" href="#">Open in <span id="oobBrowser">your browser</span> <svg><use href="#arr"/></svg></a>
+        <p class="oob__alt" id="oobAlt">Nothing happened? Tap <b>•••</b> at the top right, then <b>Open in browser</b>. Or copy the link and paste it into <span id="oobBrowser2">Safari</span>:</p>
+        <div class="oob__copy"><input id="oobUrl" readonly aria-label="Link to your AR view"><button type="button" id="oobCopy">Copy</button></div>
+      </div>
       <ol class="how">
         <li><b>Step outside.</b> Stand where you'd put it.</li>
         <li><b>Tap the Nordwood.</b> Slowly sweep your phone over the ground.</li>
@@ -597,7 +614,34 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   document.getElementById('later').addEventListener('click', function () { photosLater = true; show(8); });
 
   // submit
-  document.getElementById('submit').addEventListener('click', function () {
+  // In-app browsers (Instagram, Facebook, TikTok...) can't launch AR. Everything up to here works in them; on the AR step we hand
+  // the visitor to the phone's real browser with a link that opens this page straight on the AR step (?ar=<model>).
+  var UA = navigator.userAgent || '', IN_APP = /FBAN|FBAV|FB_IAB|FBIOS|Instagram|musical_ly|TikTok|BytedanceWebview|Snapchat|LinkedInApp|Pinterest|Line\/|Twitter/i.test(UA);
+  var IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), IS_ANDROID = /Android/i.test(UA);
+  var arModel = 'greenhouse';
+  function arLink() { var u = new URL(location.href); u.hash = ''; u.searchParams.set('ar', arModel); return u.toString(); }
+  function setupOob() {
+    var oob = document.getElementById('oob'), go = document.getElementById('oobGo'), url = arLink();
+    if (!IN_APP) { oob.hidden = true; return; }
+    oob.hidden = false; document.getElementById('arGo').hidden = true;
+    document.getElementById('oobUrl').value = url;
+    var noScheme = url.replace(/^https?:\/\//, '');
+    if (IS_ANDROID) {   // one tap: Chrome opens the same page (fallback: the plain link)
+      go.href = 'intent://' + noScheme + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+      document.getElementById('oobBrowser').textContent = 'Chrome'; document.getElementById('oobBrowser2').textContent = 'Chrome';
+    } else if (IS_IOS) {   // iOS 17+: x-safari-https opens Safari from most in-app browsers; if it does nothing, the copy link below is the way
+      go.href = 'x-safari-' + url; document.getElementById('oobBrowser').textContent = 'Safari';
+    } else go.href = url;
+  }
+  document.getElementById('oobCopy').addEventListener('click', function () {
+    var inp = document.getElementById('oobUrl'), b = this;
+    function done() { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 2000); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(inp.value).then(done, function () { inp.select(); document.execCommand('copy'); done(); });
+    else { inp.select(); document.execCommand('copy'); done(); }
+  });
+
+  document.getElementById('submit').addEventListener('click', function () { showAR(); });
+  function showAR(startModel) {
     show(9);
     var mv = document.getElementById('mv');
     if (!mv.src) {
@@ -618,7 +662,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       });
       document.getElementById('arGo').addEventListener('click', function () { if (mv.canActivateAR) mv.activateAR(); });
       // official floor area per model, in sq ft. Fill these in from the spec sheet; a model left at null shows no size line.
-      var SQFT = { greenhouse: 206, arrow: 148, classic: 88, heritage: 174 };
+      var SQFT = { greenhouse: 206, arrow: 88, classic: 148, heritage: 174 };
       var MODELS = {
         greenhouse: { src: 'nordwood-greenhouse.glb', ios: 'nordwood-greenhouse.usdz', name: 'Nordwood Greenhouse' },
         arrow:      { src: 'nordwood-arrow.glb',      ios: 'nordwood-arrow.usdz',      name: 'Nordwood Arrow' },
@@ -642,6 +686,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
         if (m.ios) mv.setAttribute('ios-src', m.ios); else mv.removeAttribute('ios-src');
         mv.alt = 'The ' + m.name + ', at real size';
         mv.src = m.src;
+        arModel = id; setupOob();
       }
       // arrows sit on top of the viewer: stop the tap reaching it, so it doesn't open AR
       ['mPrev', 'mNext'].forEach(function (bid, k) {
@@ -650,9 +695,13 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
         b.addEventListener('click', function (e) { e.stopPropagation(); go(cur + (k ? 1 : -1)); });
       });
       // swipe left/right on the viewer is left alone: it spins the model, as before
-      go(0);
+      go(Math.max(0, ORDER.indexOf(startModel || 'greenhouse')));
     }
-  });
+    setupOob();
+  }
+  // opened from the in-app hand-off link: straight to the AR step, same model
+  var deep = new URLSearchParams(location.search).get('ar');
+  if (deep) { qz.hidden = false; document.body.classList.add('locked'); showAR(deep); }
 
   // video loads on click
   document.querySelectorAll('[data-play]').forEach(function (btn) {
