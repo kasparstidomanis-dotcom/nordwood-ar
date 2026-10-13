@@ -8,6 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto+Condensed:wght@700;800&display=swap">
+<script>
+  // the model files are compressed (meshopt); tell model-viewer where the decoder lives
+  self.ModelViewerElement = self.ModelViewerElement || {};
+  self.ModelViewerElement.meshoptDecoderLocation = 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.22.0/meshopt_decoder.js';
+</script>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer.min.js"></script>
 <style>
 /* Heading font: Bootstrap Alternate Pro, the theme file (assets/BootstrapAlternatePro.woff2) built into the page so it always shows */
@@ -179,6 +184,18 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
 .how li b{color:var(--ygh-green-dark);font-weight:600}
 .how li::before{content:counter(how);position:absolute;left:0;top:2px;width:28px;height:28px;border-radius:50%;background:var(--ygh-green);color:#fff;font:800 15px/28px var(--ygh-font-highlight);text-align:center}
 @media (max-width:749px){.step .done__h{font-size:30px}}
+/* model arrows */
+.mnav{position:absolute;top:50%;z-index:3;display:flex;align-items:center;justify-content:center;width:46px;height:46px;margin-top:-23px;padding:0;border-radius:50%;border:2px solid var(--ygh-shadow);background:#fff;color:var(--ygh-green-dark);box-shadow:3px 3px 0 0 var(--ygh-shadow);cursor:pointer}
+.mnav:hover{background:var(--ygh-green-mint)}
+.mnav:active{transform:translate(2px,2px);box-shadow:1px 1px 0 0 var(--ygh-shadow)}
+.mnav svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.mnav--prev{left:10px}.mnav--next{right:10px}
+.mcap{margin:14px 0 0;text-align:center}
+.done .mcap__name{margin:0;font:800 20px/1.15 var(--ygh-font-highlight);letter-spacing:.6px;text-transform:uppercase;color:var(--ygh-green-text)}
+.done .mcap__size{margin:4px 0 10px;font:500 14px/1.3 var(--ygh-font-body);color:var(--ygh-grey)}
+.mdots{display:flex;justify-content:center;gap:8px}
+.mdots button{width:10px;height:10px;padding:0;border:0;border-radius:50%;background:#c9d6cc;cursor:pointer}
+.mdots button[aria-current="true"]{width:26px;border-radius:99px;background:var(--ygh-green)}
 /* AR viewer on the done step */
 .arv{position:relative;width:100%;aspect-ratio:4/3;margin:0 0 12px;border-radius:var(--ygh-radius-card);overflow:hidden;background:linear-gradient(180deg,var(--ygh-green-mint) 0%,#e6efe2 100%);border:1.5px solid var(--ygh-shadow);box-shadow:var(--ygh-hard-shadow)}
 .arv model-viewer{width:100%;height:100%;--poster-color:transparent;--progress-bar-color:var(--ygh-green)}
@@ -467,7 +484,14 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
           shadow-intensity="1" shadow-softness="0.8" exposure="1.05" tone-mapping="neutral" environment-image="neutral">
           <span slot="ar-button" hidden></span>
         </model-viewer>
+        <button type="button" class="mnav mnav--prev" id="mPrev" aria-label="Previous model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button type="button" class="mnav mnav--next" id="mNext" aria-label="Next model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
         <p class="arv__hint" id="arHint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a5.5 5.5 0 0 1-5.5 5.5h-1.2a5 5 0 0 1-3.9-1.9L5 15.5a1.5 1.5 0 0 1 2.3-1.9L9 15.5"/></svg><span>Tap the Nordwood to place it</span></p>
+      </div>
+      <div class="mcap" aria-live="polite">
+        <p class="mcap__name" id="mName">Nordwood Greenhouse</p>
+        <p class="mcap__size" id="mSize">&nbsp;</p>
+        <div class="mdots" id="mDots"></div>
       </div>
       <button type="button" class="btn ar-go" id="arGo">See it in my yard <svg><use href="#arr"/></svg></button>
       <ol class="how">
@@ -593,7 +617,40 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
         if (moved < 10 && mv.canActivateAR && !inAR) mv.activateAR();
       });
       document.getElementById('arGo').addEventListener('click', function () { if (mv.canActivateAR) mv.activateAR(); });
-      mv.src = 'nordwood.glb';
+      // official floor area per model, in sq ft. Fill these in from the spec sheet; a model left at null shows no size line.
+      var SQFT = { greenhouse: 206, arrow: 148, classic: 88, heritage: 174 };
+      var MODELS = {
+        greenhouse: { src: 'nordwood-greenhouse.glb', ios: 'nordwood-greenhouse.usdz', name: 'Nordwood Greenhouse' },
+        arrow:      { src: 'nordwood-arrow.glb',      ios: 'nordwood-arrow.usdz',      name: 'Nordwood Arrow' },
+        classic:    { src: 'nordwood-classic.glb',    ios: 'nordwood-classic.usdz',    name: 'Nordwood Classic' },
+        heritage:   { src: 'nordwood.glb',            ios: null,                       name: 'Heritage Nord' }
+      };
+      var ftin = function (m) { var t = Math.round(m / 0.0254); return Math.floor(t / 12) + '\u2032 ' + (t % 12) + '\u2033'; };
+      var ORDER = ['greenhouse', 'arrow', 'classic', 'heritage'], cur = 0;
+      var size = document.getElementById('mSize'), nameEl = document.getElementById('mName'), dots = document.getElementById('mDots');
+      ORDER.forEach(function (id, i) {
+        var d = document.createElement('button'); d.type = 'button'; d.setAttribute('aria-label', MODELS[id].name);
+        d.addEventListener('click', function (e) { e.stopPropagation(); go(i); });
+        dots.appendChild(d);
+      });
+      function go(i) {
+        cur = (i + ORDER.length) % ORDER.length;
+        var id = ORDER[cur], m = MODELS[id];
+        nameEl.textContent = m.name;
+        [].forEach.call(dots.children, function (d, k) { d.setAttribute('aria-current', k === cur); });
+        size.innerHTML = SQFT[id] ? SQFT[id] + ' sq ft' : '&nbsp;';
+        if (m.ios) mv.setAttribute('ios-src', m.ios); else mv.removeAttribute('ios-src');
+        mv.alt = 'The ' + m.name + ', at real size';
+        mv.src = m.src;
+      }
+      // arrows sit on top of the viewer: stop the tap reaching it, so it doesn't open AR
+      ['mPrev', 'mNext'].forEach(function (bid, k) {
+        var b = document.getElementById(bid);
+        b.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+        b.addEventListener('click', function (e) { e.stopPropagation(); go(cur + (k ? 1 : -1)); });
+      });
+      // swipe left/right on the viewer is left alone: it spins the model, as before
+      go(0);
     }
   });
 
