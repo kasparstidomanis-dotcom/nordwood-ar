@@ -461,7 +461,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       <p class="done__sub">Full size, right now, on your phone.</p>
       <div class="arv" id="arv">
         <model-viewer id="mv" alt="The Nordwood greenhouse, at real size"
-          ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" ar-placement="floor"
+          ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor"
           camera-controls touch-action="pan-y" auto-rotate rotation-per-second="14deg" interaction-prompt="none"
           camera-orbit="35deg 72deg auto" max-camera-orbit="auto 88deg auto"
           shadow-intensity="1" shadow-softness="0.8" exposure="1.05" tone-mapping="neutral" environment-image="neutral">
@@ -583,14 +583,14 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
           document.getElementById('arGo').hidden = true;
         }
       }, { once: true });
-      // a quick tap on the model opens AR, a drag still spins it
+      // a tap on the model opens AR (a drag still spins it); click is what Chrome accepts as a real tap
       var down = null;
-      mv.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY, t: Date.now() }; });
-      mv.addEventListener('pointerup', function (e) {
-        if (!down) return;
-        var moved = Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y), quick = Date.now() - down.t < 350;
+      mv.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY }; });
+      mv.addEventListener('click', function (e) {
+        var moved = down ? Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) : 0;
         down = null;
-        if (moved < 10 && quick && mv.canActivateAR) mv.activateAR();
+        var inAR = mv.getAttribute('ar-status') && mv.getAttribute('ar-status') !== 'not-presenting';
+        if (moved < 10 && mv.canActivateAR && !inAR) mv.activateAR();
       });
       document.getElementById('arGo').addEventListener('click', function () { if (mv.canActivateAR) mv.activateAR(); });
       mv.src = 'nordwood.glb';
