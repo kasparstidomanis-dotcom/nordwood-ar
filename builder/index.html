@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Backyard Review Builder</title>
+<style>
+  :root{--g:#0b5d34;--g2:#159d59;--amber:#e0a038;--ink:#17241b;--mut:#66756b;--line:#dbe4dc;--bg:#f3f6f3;--card:#fff;--tint:#eaf7ee;--red:#b4432f}
+  *{box-sizing:border-box} html,body{margin:0;height:100%} [hidden]{display:none!important}
+  body{font:14px/1.45 "Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--g);color:#fff;padding:10px 16px}
+  header h1{font-size:16px;margin:0;font-weight:700} header .who{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;opacity:.95}
+  header .who b{font-size:15px} header a{color:#cfeedd}
+  .pill{background:rgba(255,255,255,.14);border-radius:999px;padding:3px 10px}
+  header .sp{flex:1}
+  button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;background:#e3f1e8;color:var(--g)}
+  button:hover{filter:brightness(.97)} button.primary{background:var(--g2);color:#fff} button.ghost{background:transparent;color:inherit;border:1px solid var(--line)}
+  button:disabled{opacity:.45;cursor:default}
+  header button.primary{background:var(--amber);color:#1b1404}
+  main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;padding:14px;max-width:1600px;margin:0 auto}
+  @media(max-width:1000px){main{grid-template-columns:1fr}}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+  .tab{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px 6px 6px;cursor:pointer;font-weight:600}
+  .tab img{width:54px;height:40px;object-fit:cover;border-radius:6px;background:#dde3de} .tab .ic{width:54px;height:40px;border-radius:6px;background:#dde3de;display:grid;place-items:center;font-size:20px}
+  .tab.on{outline:2px solid var(--g2)} .tab small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+  .tab .ok{color:var(--g2)} .tab .warn{color:var(--amber)}
+  .stage{position:relative;background:#1b231e;border-radius:12px;overflow:hidden;user-select:none;touch-action:none}
+  #planCv{display:block;width:100%;cursor:grab}
+  .photoWrap{position:relative;width:100%;margin:0 auto}
+  .photoWrap img.bg{display:block;width:100%;height:auto;pointer-events:none}
+  .photoWrap canvas{position:absolute;inset:0;width:100%;height:100%}
+  .rotBtn{position:absolute;width:34px;height:34px;border-radius:50%;background:#fff;color:var(--ink);border:2px solid var(--ink);display:grid;place-items:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:translate(-50%,-50%);z-index:5}
+  .rotBtn svg{width:18px;height:18px}
+  .hz{position:absolute;left:0;right:0;height:0;border-top:2px dashed rgba(255,214,102,.95);z-index:4;pointer-events:none}
+  .hzGrip{position:absolute;right:6px;transform:translateY(-50%);background:#ffd666;color:#1b1404;font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px;cursor:ns-resize;pointer-events:auto;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+  .busy{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:6px 10px;border-radius:8px;z-index:6}
+  .hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:13px;padding:6px 12px;border-radius:999px;z-index:6;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:10px 0 0}
+  .toolbar .grp{display:flex;gap:4px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px}
+  .toolbar .grp button{padding:6px 10px} .toolbar .grp button.on{background:var(--g2);color:#fff}
+  .toolbar label{display:flex;gap:6px;align-items:center;font-weight:600;font-size:13px;padding:0 6px}
+  .toolbar select{font:inherit;padding:5px;border:1px solid var(--line);border-radius:6px}
+  aside .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px}
+  aside h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--g2);margin:0 0 8px}
+  aside label{display:block;font-weight:600;font-size:12.5px;margin:0 0 8px} aside label span{font-weight:400;color:var(--mut)}
+  aside input[type=text],aside textarea,aside select{width:100%;margin-top:3px;padding:7px 8px;border:1px solid var(--line);border-radius:7px;font:inherit}
+  aside textarea{min-height:54px;resize:vertical}
+  .spots{display:flex;gap:6px;margin:0 0 8px}
+  .spot{flex:1;border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:8px 6px;text-align:center}
+  .spot b{display:block;font-size:18px} .spot small{font-weight:500;color:var(--mut)} .spot.on{border-color:var(--g2);background:var(--tint)}
+  .spot.placed b{color:var(--g)}
+  .kv{display:grid;grid-template-columns:90px minmax(0,1fr);gap:4px 10px;font-size:13px} .kv div:nth-child(odd){color:var(--mut)} .kv div{overflow-wrap:anywhere}
+  .check{display:flex;gap:8px;align-items:center;font-size:13px;margin:4px 0} .check .d{width:10px;height:10px;border-radius:50%;background:#cfd6d1} .check.ok .d{background:var(--g2)}
+  .note{font-size:12.5px;color:var(--mut);margin:6px 0 0}
+  .modal{position:fixed;inset:0;background:rgba(10,20,14,.55);display:grid;place-items:center;z-index:50;padding:16px}
+  .modal .box{background:#fff;border-radius:14px;max-width:520px;width:100%;padding:18px 20px}
+  .modal h3{margin:0 0 8px}
+  .local{display:grid;gap:8px} .local input{padding:8px;border:1px solid var(--line);border-radius:7px;font:inherit;width:100%}
+  kbd{font:12px ui-monospace,monospace;background:#eef2ee;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head><body>
+<header>
+  <h1>Backyard review</h1>
+  <div class="who" id="who"><span class="pill">Test mode</span></div>
+  <div class="sp"></div>
+  <a id="backLink" href="#" hidden>All requests</a>
+  <button class="primary" id="submitBtn" disabled>Submit for image processing</button>
+</header>
+<main>
+  <section>
+    <div class="tabs" id="tabs"></div>
+    <div id="planView">
+      <div class="stage" id="planStage"><canvas id="planCv"></canvas><div class="busy" id="planBusy" hidden></div><div class="hint" id="planHint"></div></div>
+      <div class="toolbar">
+        <div class="grp"><span style="padding:0 6px;font-weight:600">Map</span><button data-z="18">Wider</button><button data-z="19">Normal</button><button data-z="20">Close</button></div>
+        <div class="grp"><button id="zoomIn" title="Zoom in">+</button><button id="zoomOut" title="Zoom out">−</button><button id="zoomFit">Fit</button></div>
+        <div class="grp"><button id="rotL" title="Rotate left 15° (Q)">↺ 15°</button><button id="rotR" title="Rotate right 15° (E)">↻ 15°</button><button id="rot90">Turn 90°</button><button id="delSpot">Remove</button></div>
+        <label><input type="checkbox" id="satNatural"> Full colour</label>
+      </div>
+      <p class="note">Pick A, B or C, then click the map to drop it. Drag to move, use the round arrows (or <kbd>Q</kbd>/<kbd>E</kbd>) to turn 15°. The scale comes from Google and is exact; the outlines are the real wall footprints.</p>
+    </div>
+    <div id="photoView" hidden>
+      <div class="stage"><div class="photoWrap" id="photoWrap"><img class="bg" id="photoImg" alt=""><canvas id="threeCv"></canvas>
+        <button class="rotBtn" id="pRotL" title="Rotate left 15° (Q)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9a8 8 0 1 1 1.6 7.5"/><path d="M4 3v6h6"/></svg></button>
+        <button class="rotBtn" id="pRotR" title="Rotate right 15° (E)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 9a8 8 0 1 0-1.6 7.5"/><path d="M20 3v6h-6"/></svg></button>
+        <div class="hz" id="hz"><span class="hzGrip" id="hzGrip">Eye level ↕</span></div>
+        <div class="busy" id="photoBusy" hidden></div><div class="hint" id="photoHint"></div></div></div>
+      <div class="toolbar">
+        <div class="grp"><button id="pRot90">Turn 90°</button><button id="pMirror">Doors other side</button></div>
+        <div class="grp"><button id="pGrid" class="on">Ground grid</button><button id="pPerson">5'9" person</button></div>
+        <label>Lens <select id="pLens"><option value="63">Phone (1x)</option><option value="100">Phone wide (0.5x)</option><option value="42">Phone zoom (2x)</option><option value="75">Wide camera</option></select></label>
+        <label>Taken from <select id="pHeight"><option value="1.6">Standing on the ground</option><option value="3">Deck or porch</option><option value="5">Upstairs window</option></select></label>
+        <label>Sun <input type="range" id="pSun" min="0" max="359" value="220" style="width:110px"></label>
+        <div class="grp"><button id="pSkip">Skip photo</button><button id="pDone" class="on">Looks right ✓</button></div>
+      </div>
+      <p class="note">Drag the greenhouse to move it on the ground; click anywhere on the lawn to jump it there. If it looks too big or too small, drag the yellow <b>Eye level</b> line until the grid lies flat on the lawn. Size is always the real size.</p>
+    </div>
+  </section>
+  <aside>
+    <div class="card" id="custCard"><h2>Request</h2><div class="kv" id="custKv"></div>
+      <label style="margin-top:10px">Greenhouse <select id="product"></select></label></div>
+    <div class="card" id="planCard"><h2>Site plan spots</h2><div class="spots" id="spots"></div>
+      <label>Why spot A <span>(recommended)</span><textarea id="noteA">Full afternoon sun, level lawn and a short walk from the back door.</textarea></label>
+      <label>Spot B<textarea id="noteB">Good sun and more privacy; needs a short gravel path.</textarea></label>
+      <label>Spot C<textarea id="noteC">Works too, but nearby trees shade it later in the day.</textarea></label>
+      <label>Expert<input type="text" id="expert" value="Kaspar"></label>
+      <label>Closing line<textarea id="closing">Happy to walk you through the plan and answer any questions about the base, delivery or sizing.</textarea></label></div>
+    <div class="card"><h2>Checklist</h2><div id="checks"></div><p class="note" id="submitNote"></p></div>
+  </aside>
+</main>
+<div class="modal" id="localModal" hidden><div class="box"><h3>Test mode</h3>
+  <p class="note" style="margin:0 0 10px">Real requests open with everything filled in from the form. For testing, enter a request here.</p>
+  <div class="local">
+    <input id="lName" placeholder="Customer name" value="Test Customer">
+    <input id="lAddr" placeholder="Street address, city, state">
+    <select id="lProd"></select>
+    <label style="font-weight:600;font-size:13px">Backyard photos <input type="file" id="lPhotos" accept="image/*" multiple></label>
+    <input id="lKey" placeholder="Google Maps API key (kept in this browser only)">
+    <button class="primary" id="lGo">Start</button>
+  </div></div></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ======================= data ======================= */
+// BOOT is injected by the ygh-backyard worker (/admin/r/<id>/build): {id, name, email, phone, product, address, zip, notes,
+// photos:[url], mapUrl:'.../map?zoom={z}&key=..', geoUrl, saveUrl, listUrl, modelBase}. Without it the page runs in test mode.
+const BOOT = window.__BACKYARD__ || null;
+const MODEL_BASE = (BOOT && BOOT.modelBase) || (location.protocol === 'file:' ? 'https://cdn.jsdelivr.net/gh/kasparstidomanis-dotcom/nordwood-ar@main/' : '../');
+const FT = 0.3048;
+// footprints in metres (wall outlines from the spec sheets / official plan). x = across, y = along. Plan only.
+const T_BODY = 9.84 * FT, T_LEN = 17.80 * FT, T_WING = (13.82 - 9.84) * FT, T_WLEN = 9.84 * FT, T_W0 = (T_LEN - T_WLEN) / 2;
+const PRODUCTS = {
+  tshape:   { name: 'Nordwood Greenhouse (T-shape)', glb: 'nordwood-greenhouse.glb', w: 13.82 * FT, h: T_LEN, size: "17'10\" x 13'10\"",
+              outline: [[T_WING, 0], [13.82 * FT, 0], [13.82 * FT, T_LEN], [T_WING, T_LEN], [T_WING, T_W0 + T_WLEN], [0, T_W0 + T_WLEN], [0, T_W0], [T_WING, T_W0]] },
+  classic:  { name: 'Nordwood Classic', glb: 'nordwood-classic.glb', w: 9.84 * FT, h: 15.81 * FT, size: "15'10\" x 9'10\"" },
+  arrow:    { name: 'Nordwood Arrow', glb: 'nordwood-arrow.glb', w: 7.87 * FT, h: 11.91 * FT, size: "11'11\" x 7'10\"" },
+  'arrow-shed': { name: 'Nordwood Arrow with Shed', glb: null, w: 7.87 * FT, h: 18.08 * FT, size: "18'1\" x 7'10\"", zone: [0, 11.91 * FT, 7.87 * FT, 6.17 * FT] },
+  heritage: { name: 'Heritage Nord (outline approx.)', glb: 'nordwood.glb', w: 4.257, h: 4.791, size: "15'9\" x 14'" },
+};
+const outlineOf = (p) => p.outline || [[0, 0], [p.w, 0], [p.w, p.h], [0, p.h]];
+const S = {
+  req: null, product: 'tshape',
+  plan: { lat: null, lng: null, zoom: 19, img: null, mpp: 0.15, natural: false },
+  view: { x: 0, y: 0, s: 6 },            // centre in metres (east +x, south +y), screen px per metre
+  spots: { A: null, B: null, C: null }, sel: 'A',
+  photos: [], tab: 'plan', submitted: false,
+};
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+/* ======================= boot ======================= */
+for (const sel of [$('product'), $('lProd')]) sel.innerHTML = Object.entries(PRODUCTS).map(([k, p]) => `<option value="${k}">${esc(p.name)}${p.glb ? '' : ' (no 3D model yet)'}</option>`).join('');
+async function boot() {
+  if (BOOT) return start({ ...BOOT, mode: 'worker' });
+  $('localModal').hidden = false; $('lKey').value = store.get('bb-gkey') || ''; $('lAddr').value = store.get('bb-addr') || '';
+  $('lGo').onclick = () => {
+    const files = [...$('lPhotos').files];
+    store.set('bb-gkey', $('lKey').value.trim()); store.set('bb-addr', $('lAddr').value.trim());
+    $('localModal').hidden = true;
+    start({ mode: 'local', name: $('lName').value, address: $('lAddr').value, product: $('lProd').value, gkey: $('lKey').value.trim(),
+      photos: files.map((f) => ({ url: URL.createObjectURL(f), file: f })) });
+  };
+}
+window.__bbStart = (cfg) => { $('localModal').hidden = true; return start(cfg); };   // used by the headless tests
+async function start(req) {
+  S.req = req; S.product = PRODUCTS[req.product] ? req.product : 'tshape'; $('product').value = S.product;
+  $('who').innerHTML = `<b>${esc(req.name || 'Customer')}</b><span class="pill">${esc(PRODUCTS[S.product].name)}</span>${req.mode === 'local' ? '<span class="pill">Test mode</span>' : ''}`;
+  $('custKv').innerHTML = [['Name', req.name], ['Email', req.email], ['Phone', req.phone], ['Address', [req.address, req.zip].filter(Boolean).join(' ')], ['Notes', req.notes]]
+    .filter(([, v]) => v).map(([k, v]) => `<div>${k}</div><div>${esc(v)}</div>`).join('');
+  if (req.listUrl) { $('backLink').href = req.listUrl; $('backLink').hidden = false; }
+  S.photos = (req.photos || []).map((p, i) => ({ i, url: typeof p === 'string' ? p : p.url, file: p.file || null, hfov: 63, camH: 1.6, horizon: null, auto: null,
+    depthState: 'waiting', place: null, status: 'todo', sunAz: 220 }));
+  renderTabs(); renderSpots(); checks();
+  loadPlan(19);
+  analysePhotos();
+}
+$('product').onchange = () => { S.product = $('product').value; drawPlan(); if (S.tab !== 'plan') loadModel().then(() => photo3d.refresh()); checks(); };
+
+/* ======================= tabs ======================= */
+function renderTabs() {
+  const t = [`<div class="tab ${S.tab === 'plan' ? 'on' : ''}" data-t="plan"><div class="ic">🗺</div><div>Site plan<small class="${S.spots.A ? 'ok' : 'warn'}">${S.spots.A ? 'A placed' : 'place A'}</small></div></div>`];
+  S.photos.forEach((p, i) => t.push(`<div class="tab ${S.tab === i ? 'on' : ''}" data-t="${i}"><img src="${esc(p.url)}" alt=""><div>Photo ${i + 1}<small class="${p.status === 'done' ? 'ok' : p.status === 'skip' ? '' : 'warn'}">${p.status === 'done' ? 'placed ✓' : p.status === 'skip' ? 'skipped' : p.depthState === 'running' ? 'finding ground…' : 'to place'}</small></div></div>`));
+  $('tabs').innerHTML = t.join('');
+  $('tabs').querySelectorAll('.tab').forEach((el) => el.onclick = () => openTab(el.dataset.t === 'plan' ? 'plan' : +el.dataset.t));
+}
+function openTab(t) {
+  S.tab = t; renderTabs();
+  $('planView').hidden = t !== 'plan'; $('photoView').hidden = t === 'plan'; $('planCard').hidden = t !== 'plan';
+  if (t === 'plan') { sizePlan(); drawPlan(); } else photo3d.open(S.photos[t]);
+}
+
+/* ======================= site plan ======================= */
+const pc = $('planCv'), pctx = pc.getContext('2d');
+let PW = 1000, PH = 700, DPR = 1;
+function sizePlan() { const r = pc.parentElement.getBoundingClientRect(); DPR = Math.min(2, window.devicePixelRatio || 1); PW = Math.max(300, r.width); PH = Math.round(Math.min(760, Math.max(380, PW * 0.68))); pc.width = PW * DPR; pc.height = PH * DPR; pc.style.height = PH + 'px'; }
+window.addEventListener('resize', () => { if (S.tab === 'plan') { sizePlan(); drawPlan(); } else photo3d.resize(); });
+async function geocode() {
+  if (S.plan.lat != null) return;
+  if (S.req.geoUrl) { const g = await (await fetch(S.req.geoUrl)).json(); if (g.lat == null) throw new Error(g.error || 'address not found'); Object.assign(S.plan, { lat: g.lat, lng: g.lng, formatted: g.formatted }); return; }
+  if (!S.req.gkey) throw new Error('no Google key');
+  const g = await (await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(S.req.address)}&key=${S.req.gkey}`)).json();
+  if (!g.results || !g.results[0]) throw new Error('Google could not find the address (' + (g.status || '') + ')');
+  const l = g.results[0].geometry.location; Object.assign(S.plan, { lat: l.lat, lng: l.lng, formatted: g.results[0].formatted_address });
+}
+async function loadPlan(zoom) {
+  $('planBusy').hidden = false; $('planBusy').textContent = 'Loading the satellite map…';
+  try {
+    await geocode();
+    const url = S.req.mapUrl ? S.req.mapUrl.replace('{z}', zoom)
+      : `https://maps.googleapis.com/maps/api/staticmap?center=${S.plan.lat},${S.plan.lng}&zoom=${zoom}&size=640x640&scale=2&maptype=satellite&key=${S.req.gkey}`;
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('map image failed')); img.src = url; });
+    const first = !S.plan.img;
+    // Web Mercator: metres per pixel at this latitude; scale=2 doubles the pixels over the same area
+    S.plan.mpp = 156543.03392 * Math.cos(S.plan.lat * Math.PI / 180) / Math.pow(2, zoom) / (img.naturalWidth / 640);
+    S.plan.img = img; S.plan.zoom = zoom;
+    document.querySelectorAll('[data-z]').forEach((b) => b.classList.toggle('on', +b.dataset.z === zoom));
+    sizePlan(); if (first) fitPlan(); drawPlan();
+    $('planBusy').hidden = true;
+  } catch (e) { $('planBusy').textContent = 'Map: ' + e.message; }
+}
+function fitPlan() { S.view = { x: 0, y: 0, s: Math.min(PW, PH) / 70 }; }
+document.querySelectorAll('[data-z]').forEach((b) => b.onclick = () => loadPlan(+b.dataset.z));
+$('zoomIn').onclick = () => { S.view.s *= 1.3; drawPlan(); }; $('zoomOut').onclick = () => { S.view.s /= 1.3; drawPlan(); }; $('zoomFit').onclick = () => { fitPlan(); drawPlan(); };
+$('satNatural').onchange = (e) => { S.plan.natural = e.target.checked; drawPlan(); };
+const toScr = (x, y) => [(x - S.view.x) * S.view.s + PW / 2, (y - S.view.y) * S.view.s + PH / 2];
+const toM = (sx, sy) => [(sx - PW / 2) / S.view.s + S.view.x, (sy - PH / 2) / S.view.s + S.view.y];
+function spotPoly(sp) {  // footprint corners in metres
+  const p = PRODUCTS[S.product], a = sp.rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  return outlineOf(p).map(([x, y]) => { const lx = x - p.w / 2, ly = y - p.h / 2; return [sp.x + lx * c - ly * s, sp.y + lx * s + ly * c]; });
+}
+function fmtFt(m) { const v = m / FT; let f = Math.floor(v), i = Math.round((v - f) * 12); if (i === 12) { f++; i = 0; } return `${f}' ${i}"`; }
+let rotHandles = [];
+function drawPlan() {
+  const c = pctx; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.fillStyle = '#26302a'; c.fillRect(0, 0, PW, PH);
+  if (S.plan.img) {
+    const im = S.plan.img, span = im.naturalWidth * S.plan.mpp, [x0, y0] = toScr(-span / 2, -span / 2);
+    c.filter = S.plan.natural ? 'none' : 'saturate(0.62) contrast(1.04) brightness(1.04)';
+    c.drawImage(im, x0, y0, span * S.view.s, span * S.view.s); c.filter = 'none';
+    if (!S.plan.natural) { c.fillStyle = 'rgba(246,244,238,.14)'; c.fillRect(0, 0, PW, PH); }
+  }
+  rotHandles = [];
+  for (const k of ['C', 'B', 'A']) { const sp = S.spots[k]; if (sp) drawSpot(c, k, sp); }
+  // scale bar + north
+  const ftPx = FT * S.view.s, total = [10, 20, 40, 50, 100, 200].find((v) => v * ftPx >= 110) || 200, bw = total * ftPx, bx = 18, by = PH - 22;
+  c.fillStyle = 'rgba(255,255,255,.92)'; c.fillRect(bx - 10, by - 30, bw + 46, 44);
+  for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? '#fff' : '#1a1b18'; c.fillRect(bx + i * bw / 4, by, bw / 4, 6); }
+  c.strokeStyle = '#1a1b18'; c.lineWidth = 1; c.strokeRect(bx, by, bw, 6);
+  c.fillStyle = '#1a1b18'; c.font = '600 11px Segoe UI, Arial'; c.textAlign = 'center';
+  [0, 2, 4].forEach((i) => c.fillText(String(i * total / 4), bx + i * bw / 4, by - 5)); c.textAlign = 'left'; c.fillText('ft', bx + bw + 8, by + 6);
+  const nx = PW - 34, ny = 34; c.beginPath(); c.arc(nx, ny, 20, 0, 7); c.fillStyle = 'rgba(255,255,255,.92)'; c.fill();
+  c.beginPath(); c.moveTo(nx, ny - 14); c.lineTo(nx - 6, ny + 6); c.lineTo(nx, ny + 2); c.lineTo(nx + 6, ny + 6); c.closePath(); c.fillStyle = '#1a1b18'; c.fill();
+  c.font = '700 9px Segoe UI'; c.textAlign = 'center'; c.fillText('N', nx, ny + 16); c.textAlign = 'left';
+  const k = S.sel; $('planHint').textContent = S.spots[k] ? `Spot ${k}: drag to move, round arrows turn 15°` : `Click the map to place spot ${k}`;
+}
+function drawSpot(c, k, sp) {
+  const main = k === 'A', on = k === S.sel, pts = spotPoly(sp).map(([x, y]) => toScr(x, y));
+  const path = () => { c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); };
+  c.save();
+  if (main) { c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 10; c.shadowOffsetY = 3; }
+  path(); c.fillStyle = main ? 'rgba(206,232,215,.95)' : 'rgba(255,255,255,.55)'; c.fill(); c.shadowColor = 'transparent';
+  const p = PRODUCTS[S.product];
+  if (p.zone) { const a = sp.rot * Math.PI / 180, cs = Math.cos(a), sn = Math.sin(a), [zx, zy, zw, zh] = p.zone;
+    const q = [[zx, zy], [zx + zw, zy], [zx + zw, zy + zh], [zx, zy + zh]].map(([x, y]) => { const lx = x - p.w / 2, ly = y - p.h / 2; return toScr(sp.x + lx * cs - ly * sn, sp.y + lx * sn + ly * cs); });
+    c.beginPath(); q.forEach((pt, i) => i ? c.lineTo(pt[0], pt[1]) : c.moveTo(pt[0], pt[1])); c.closePath(); c.fillStyle = 'rgba(92,70,46,.78)'; c.fill(); }
+  if (main) { path(); c.lineWidth = 2.4; c.strokeStyle = '#0b5d34'; c.stroke(); }
+  else { path(); c.lineWidth = 3; c.strokeStyle = 'rgba(20,24,21,.6)'; c.stroke(); c.setLineDash([7, 5]); path(); c.lineWidth = 1.6; c.strokeStyle = '#fff'; c.stroke(); c.setLineDash([]); }
+  if (on) { path(); c.lineWidth = 1.5; c.strokeStyle = '#ffd666'; c.setLineDash([3, 3]); c.stroke(); c.setLineDash([]); }
+  // label tag above the top-most corner
+  const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const tx = (minX + maxX) / 2, ty = minY - (on ? 44 : 16);
+  c.font = '700 12px Segoe UI, Arial'; const label = main ? 'A  RECOMMENDED' : k, w = main ? c.measureText(label).width + 20 : 26;
+  c.beginPath(); c.roundRect(tx - w / 2, ty - 12, w, 24, 12); c.fillStyle = main ? '#0b5d34' : '#fff'; c.fill(); if (!main) { c.lineWidth = 1.5; c.strokeStyle = 'rgba(20,24,21,.7)'; c.stroke(); }
+  c.fillStyle = main ? '#fff' : '#1a1b18'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, tx, ty + 0.5); c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  if (on) { // dimension text + rotate handles at the two upper corners of the bounding box
+    c.font = '600 11px Segoe UI'; c.fillStyle = '#fff'; c.strokeStyle = 'rgba(0,0,0,.7)'; c.lineWidth = 3; const dim = PRODUCTS[S.product].size;
+    c.strokeText(dim, minX, maxY + 16); c.fillText(dim, minX, maxY + 16);
+    const half = Math.max((maxX - minX) / 2 + 18, 30), mid = (minX + maxX) / 2, hy = minY - 12;
+    for (const [hx, dir] of [[mid - half, -1], [mid + half, 1]]) { rotHandles.push({ x: hx, y: hy, dir }); drawRotIcon(c, hx, hy, -dir); }
+  }
+  c.restore();
+}
+function drawRotIcon(c, x, y, dir) {
+  c.beginPath(); c.arc(x, y, 13, 0, 7); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = '#17241b'; c.stroke();
+  c.beginPath(); c.lineWidth = 2; const a0 = dir < 0 ? -0.3 : Math.PI + 0.3; c.arc(x, y, 6, a0, a0 + (dir < 0 ? -4.4 : 4.4), dir < 0); c.stroke();
+  const ex = x + 6 * Math.cos(a0), ey = y + 6 * Math.sin(a0); c.beginPath(); c.moveTo(ex - 3, ey - 3 * dir); c.lineTo(ex, ey); c.lineTo(ex + 3 * dir, ey - 2); c.stroke();
+}
+function inPoly(px, py, pts) { let ins = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) ins = !ins; } return ins; }
+let pdrag = null;
+pc.addEventListener('pointerdown', (e) => {
+  const r = pc.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  const h = rotHandles.find((q) => Math.hypot(q.x - sx, q.y - sy) < 16);
+  if (h) { rotate(h.dir * 15); return; }
+  const [mx, my] = toM(sx, sy);
+  for (const k of ['A', 'B', 'C']) { const sp = S.spots[k]; if (sp && inPoly(mx, my, spotPoly(sp))) { S.sel = k; pdrag = { k, dx: sp.x - mx, dy: sp.y - my }; renderSpots(); drawPlan(); pc.setPointerCapture(e.pointerId); return; } }
+  if (!S.spots[S.sel]) { S.spots[S.sel] = { x: mx, y: my, rot: S.spots.A ? S.spots.A.rot : 0 }; pdrag = { k: S.sel, dx: 0, dy: 0 }; afterSpotChange(); pc.setPointerCapture(e.pointerId); return; }
+  pdrag = { pan: true, sx, sy, vx: S.view.x, vy: S.view.y }; pc.style.cursor = 'grabbing'; pc.setPointerCapture(e.pointerId);
+});
+pc.addEventListener('pointermove', (e) => {
+  if (!pdrag) return; const r = pc.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  if (pdrag.pan) { S.view.x = pdrag.vx - (sx - pdrag.sx) / S.view.s; S.view.y = pdrag.vy - (sy - pdrag.sy) / S.view.s; }
+  else { const [mx, my] = toM(sx, sy); Object.assign(S.spots[pdrag.k], { x: mx + pdrag.dx, y: my + pdrag.dy }); }
+  drawPlan();
+});
+pc.addEventListener('pointerup', () => { pdrag = null; pc.style.cursor = 'grab'; });
+pc.addEventListener('wheel', (e) => { e.preventDefault(); const r = pc.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top, [mx, my] = toM(sx, sy);
+  S.view.s *= e.deltaY < 0 ? 1.15 : 1 / 1.15; const [nx, ny] = toM(sx, sy); S.view.x += mx - nx; S.view.y += my - ny; drawPlan(); }, { passive: false });
+function rotate(d) { if (S.tab !== 'plan') return photo3d.rotate(d); const sp = S.spots[S.sel]; if (!sp) return; sp.rot = (sp.rot + d + 360) % 360; drawPlan(); }
+$('rotL').onclick = () => rotate(-15); $('rotR').onclick = () => rotate(15); $('rot90').onclick = () => rotate(90);
+$('delSpot').onclick = () => { S.spots[S.sel] = null; afterSpotChange(); };
+document.addEventListener('keydown', (e) => {
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if (e.key === 'q' || e.key === 'Q') rotate(-15); if (e.key === 'e' || e.key === 'E') rotate(15);
+  if (S.tab === 'plan' && ['a', 'b', 'c'].includes(e.key.toLowerCase()) && !e.ctrlKey) { S.sel = e.key.toUpperCase(); renderSpots(); drawPlan(); }
+});
+function renderSpots() {
+  $('spots').innerHTML = ['A', 'B', 'C'].map((k) => `<button class="spot ${S.sel === k ? 'on' : ''} ${S.spots[k] ? 'placed' : ''}" data-k="${k}"><b>${k}</b><small>${S.spots[k] ? 'placed' : k === 'A' ? 'recommended' : 'optional'}</small></button>`).join('');
+  $('spots').querySelectorAll('.spot').forEach((b) => b.onclick = () => { S.sel = b.dataset.k; renderSpots(); drawPlan(); });
+}
+function afterSpotChange() { renderSpots(); renderTabs(); drawPlan(); checks(); }
+
+/* ======================= photos: ground detection (in the browser) ======================= */
+let depthPipe = null;
+async function getDepth() {
+  if (depthPipe) return depthPipe;
+  const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1/dist/transformers.min.js');
+  env.allowLocalModels = false; env.useBrowserCache = true;   // cached in the browser after the first download
+  if (BOOT && BOOT.hfProxy) env.remoteHost = BOOT.hfProxy;   // the worker relays the model files from its own address (no cross-site fetch)
+  let dev = 'wasm';
+  try { const ad = navigator.gpu && await navigator.gpu.requestAdapter(); if (ad && ad.features.has('shader-f16')) dev = 'webgpu'; } catch (e) {}
+  depthPipe = await pipeline('depth-estimation', 'onnx-community/depth-anything-v2-small', { device: dev, dtype: dev === 'webgpu' ? 'fp16' : 'q8' });
+  return depthPipe;
+}
+// Ground line from relative depth: for a level camera, disparity on the ground grows linearly with the image row and reaches the
+// "infinity" disparity (the sky) at the horizon. Fit disparity vs row on the lower part of the photo (mostly lawn) and extend it.
+function horizonFrom(pd) {
+  const dims = pd.dims.slice(-2), H = dims[0], W = dims[1], d = pd.data;
+  const all = Float32Array.from(d).sort(), far = all[Math.floor(all.length * 0.02)];
+  const rows = [];
+  for (let v = Math.floor(H * 0.62); v < H - 2; v++) { const vals = []; for (let u = Math.floor(W * 0.2); u < W * 0.8; u++) vals.push(d[v * W + u]); vals.sort((a, b) => a - b); rows.push([v, vals[vals.length >> 1]]); }
+  const sl = []; for (let i = 0; i < rows.length; i += 2) for (let j = i + 6; j < rows.length; j += 3) sl.push((rows[j][1] - rows[i][1]) / (rows[j][0] - rows[i][0]));
+  sl.sort((a, b) => a - b); const k = sl[sl.length >> 1];
+  const ic = rows.map(([v, x]) => x - k * v).sort((a, b) => a - b), c = ic[ic.length >> 1];
+  const f = (far - c) / k / H;
+  return k > 0 && f > -0.3 && f < 0.85 ? f : null;
+}
+async function exifFov(p) {
+  if (!p.file) return null;
+  try { const exifr = (await import('https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.esm.mjs')).default; const x = await exifr.parse(p.file, ['FocalLengthIn35mmFormat']);
+    const f35 = x && x.FocalLengthIn35mmFormat; return f35 ? 2 * Math.atan(36 / (2 * f35)) * 180 / Math.PI : null; } catch (e) { return null; }
+}
+async function analysePhotos() {
+  for (const p of S.photos) {
+    p.depthState = 'running'; renderTabs(); if (S.tab === p.i) photo3d.busy('Finding the ground…');
+    try {
+      const fov = await exifFov(p); if (fov) p.hfov = Math.round(fov);
+      const dp = await getDepth(); const r = await dp(p.url); const h = horizonFrom(r.predicted_depth);
+      p.auto = h; if (p.horizon == null) p.horizon = h != null ? h : 0.42; p.depthState = h != null ? 'done' : 'manual';
+    } catch (e) { console.warn('depth failed', e); p.depthState = 'manual'; if (p.horizon == null) p.horizon = 0.42; }
+    renderTabs(); if (S.tab === p.i) photo3d.open(p);
+  }
+}
+
+/* ======================= photos: 3D placement ======================= */
+const photo3d = (() => {
+  const cv = $('threeCv'), img = $('photoImg'), wrap = $('photoWrap');
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, preserveDrawingBuffer: true });
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.0;
+  const scene = new THREE.Scene(); const pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  const cam = new THREE.PerspectiveCamera(45, 4 / 3, 0.1, 400); cam.rotation.order = 'YXZ';
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x88aa77, 0.9));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 80 }); sun.shadow.bias = -0.0004; scene.add(sun); scene.add(sun.target);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.38 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  const grid = new THREE.GridHelper(60, 60, 0xffd666, 0xffffff); grid.material.transparent = true; grid.material.opacity = 0.35; grid.material.depthWrite = false; scene.add(grid);
+  const person = new THREE.Group(); { const m = new THREE.MeshStandardMaterial({ color: 0x2a3ea0, transparent: true, opacity: 0.85 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.5, 16), m); body.position.y = 0.75; const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), m); head.position.y = 1.62; person.add(body, head); }
+  person.visible = false; scene.add(person);
+  const holder = new THREE.Group(); scene.add(holder);
+  const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+  const cache = {}; let model = null, modelKey = null, cur = null, showGrid = true, showPerson = false;
+  const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  function busy(t) { $('photoBusy').hidden = !t; $('photoBusy').textContent = t || ''; }
+  async function loadModelFor(key) {
+    const p = PRODUCTS[key]; if (!p.glb) return null;
+    if (!cache[key]) cache[key] = loader.loadAsync(MODEL_BASE + p.glb).then((g) => { g.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); return g.scene; });
+    return cache[key];
+  }
+  async function ensureModel() {
+    if (modelKey === S.product && model) return;
+    holder.clear(); model = null; modelKey = S.product;
+    const p = PRODUCTS[S.product]; if (!p.glb) { busy('No 3D model for ' + p.name + ' yet'); return; }
+    busy('Loading the 3D model…'); const m = await loadModelFor(S.product); busy(cur && cur.depthState === 'running' ? 'Finding the ground…' : '');
+    model = m.clone(true); const box = new THREE.Box3().setFromObject(model), c = box.getCenter(new THREE.Vector3());
+    model.position.set(-c.x, -box.min.y, -c.z);  // centre on the origin, standing on the ground
+    holder.add(model);
+  }
+  function camFor(p) {
+    const W = img.naturalWidth || 4, H = img.naturalHeight || 3, aspect = W / H;
+    const fpx = (W / 2) / Math.tan(p.hfov * Math.PI / 360);
+    cam.fov = 2 * Math.atan((H / 2) / fpx) * 180 / Math.PI; cam.aspect = aspect;
+    const pitch = Math.atan(((0.5 - p.horizon) * H) / fpx);  // horizon above the centre = camera looking down
+    cam.position.set(0, p.camH, 0); cam.rotation.set(-pitch, 0, 0); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  }
+  function groundAt(fx, fy) { ray.setFromCamera(new THREE.Vector2(fx * 2 - 1, -(fy * 2 - 1)), cam); const hit = new THREE.Vector3(); return ray.ray.intersectPlane(plane, hit) && hit.z < -0.5 ? hit : null; }
+  function resize() { if (!cur) return; const r = wrap.getBoundingClientRect(); renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.setSize(r.width, r.height, false); draw(); }
+  function applyPlace() {
+    const pl = cur.place; holder.position.set(pl.x, 0, pl.z); holder.rotation.y = pl.rot * Math.PI / 180; holder.scale.set(pl.mirror ? -1 : 1, 1, 1);
+    const a = cur.sunAz * Math.PI / 180; sun.position.set(pl.x + Math.cos(a) * 30, 34, pl.z + Math.sin(a) * 30); sun.target.position.set(pl.x, 0, pl.z);
+    grid.position.set(pl.x, 0.005, pl.z); grid.visible = showGrid;
+    const box = model ? new THREE.Box3().setFromObject(holder) : null;
+    person.visible = showPerson; if (box) person.position.set(box.max.x + 0.7, 0, (box.min.z + box.max.z) / 2);
+  }
+  function draw() {
+    if (!cur) return; camFor(cur); if (cur.place) applyPlace(); renderer.render(scene, cam);
+    // overlays: rotate buttons at the top corners of the model on screen, eye-level line
+    const r = wrap.getBoundingClientRect();
+    if (model && cur.place) {
+      const box = new THREE.Box3().setFromObject(holder); const pts = [];
+      for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) pts.push(new THREE.Vector3(x, y, z).project(cam));
+      const xs = pts.map((v) => (v.x + 1) / 2 * r.width), ys = pts.map((v) => (1 - v.y) / 2 * r.height);
+      const top = Math.max(18, Math.min(...ys) - 6);
+      Object.assign($('pRotL').style, { left: Math.max(18, Math.min(...xs) - 10) + 'px', top: top + 'px' }); Object.assign($('pRotR').style, { left: Math.min(r.width - 18, Math.max(...xs) + 10) + 'px', top: top + 'px' });
+      $('pRotL').hidden = $('pRotR').hidden = false;
+    } else $('pRotL').hidden = $('pRotR').hidden = true;
+    $('hz').style.top = (cur.horizon * r.height) + 'px';
+  }
+  async function open(p) {
+    cur = p; busy(p.depthState === 'running' || p.depthState === 'waiting' ? 'Finding the ground…' : '');
+    if (img.dataset.src !== p.url) { img.dataset.src = p.url; img.src = p.url; await img.decode().catch(() => {}); }
+    $('pLens').value = String([63, 100, 42, 75].reduce((a, b) => Math.abs(b - p.hfov) < Math.abs(a - p.hfov) ? b : a));
+    $('pHeight').value = String(p.camH); $('pSun').value = p.sunAz;
+    if (p.horizon == null) p.horizon = 0.42;
+    resize(); await ensureModel();
+    if (!p.place && p.depthState !== 'running' && p.depthState !== 'waiting') {
+      // start where the greenhouse fills about 45% of the photo width, straight ahead on the lawn
+      const len = model ? new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).z : 5;
+      const dist = Math.max(6, len / (0.45 * 2 * Math.tan(p.hfov * Math.PI / 360)));
+      p.place = { x: 0, z: -dist, rot: 20, mirror: false };
+    }
+    hint(); draw();
+  }
+  function hint() { $('photoHint').textContent = !cur ? '' : cur.depthState === 'running' || cur.depthState === 'waiting' ? 'Finding the ground in this photo…' : cur.status === 'done' ? 'Placed. Change anything, or open the next photo.' : 'Drag the greenhouse into place, then press "Looks right"'; }
+  // interaction
+  let drag = null;
+  function ndc(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; }
+  cv.addEventListener('pointerdown', (e) => {
+    if (!cur || !cur.place) return; const [fx, fy] = ndc(e); const g = groundAt(fx, fy);
+    ray.setFromCamera(new THREE.Vector2(fx * 2 - 1, -(fy * 2 - 1)), cam);
+    const onModel = model && ray.intersectObject(holder, true).length > 0;
+    if (onModel && g) drag = { dx: cur.place.x - g.x, dz: cur.place.z - g.z };
+    else if (g) { cur.place.x = g.x; cur.place.z = g.z; drag = { dx: 0, dz: 0 }; }
+    cur.status = cur.status === 'skip' ? 'todo' : cur.status; cv.setPointerCapture(e.pointerId); draw();
+  });
+  cv.addEventListener('pointermove', (e) => { if (!drag) return; const [fx, fy] = ndc(e); const g = groundAt(fx, fy); if (g) { cur.place.x = g.x + drag.dx; cur.place.z = g.z + drag.dz; draw(); } });
+  cv.addEventListener('pointerup', () => { drag = null; });
+  // eye-level line
+  let hdrag = false;
+  $('hzGrip').addEventListener('pointerdown', (e) => { hdrag = true; $('hzGrip').setPointerCapture(e.pointerId); e.stopPropagation(); });
+  $('hzGrip').addEventListener('pointermove', (e) => { if (!hdrag || !cur) return; const r = wrap.getBoundingClientRect();
+    const keep = cur.place ? new THREE.Vector3(cur.place.x, 0, cur.place.z).project(cam) : null;
+    cur.horizon = Math.min(0.9, Math.max(-0.2, (e.clientY - r.top) / r.height));
+    camFor(cur); if (keep) { const g = groundAt((keep.x + 1) / 2, (1 - keep.y) / 2); if (g) { cur.place.x = g.x; cur.place.z = g.z; } }  // the greenhouse stays on the same spot of the lawn
+    draw(); });
+  $('hzGrip').addEventListener('pointerup', () => { hdrag = false; });
+  function rotateBy(d) { if (!cur || !cur.place) return; cur.place.rot = (cur.place.rot + d + 360) % 360; draw(); }
+  $('pRotL').onclick = () => rotateBy(15); $('pRotR').onclick = () => rotateBy(-15); $('pRot90').onclick = () => rotateBy(90);
+  $('pMirror').onclick = () => { if (cur && cur.place) { cur.place.mirror = !cur.place.mirror; draw(); } };
+  $('pGrid').onclick = (e) => { showGrid = !showGrid; e.target.classList.toggle('on', showGrid); draw(); };
+  $('pPerson').onclick = (e) => { showPerson = !showPerson; e.target.classList.toggle('on', showPerson); draw(); };
+  $('pLens').onchange = (e) => { if (!cur) return; cur.hfov = +e.target.value; draw(); };
+  $('pHeight').onchange = (e) => { if (!cur) return; cur.camH = +e.target.value; draw(); };
+  $('pSun').oninput = (e) => { if (!cur) return; cur.sunAz = +e.target.value; draw(); };
+  $('pSkip').onclick = () => { if (!cur) return; cur.status = 'skip'; cur.out = null; renderTabs(); checks(); nextTab(); };
+  $('pDone').onclick = async () => { if (!cur || !cur.place || !model) return; busy('Saving this photo…'); cur.out = await exportShot(cur); cur.status = 'done'; busy(''); renderTabs(); checks(); nextTab(); };
+  // full-resolution composite (photo + greenhouse + shadow) and mask (greenhouse only), for the image AI
+  async function exportShot(p) {
+    const W0 = img.naturalWidth, H0 = img.naturalHeight, k = Math.min(1, 2048 / Math.max(W0, H0)), W = Math.round(W0 * k), H = Math.round(H0 * k);
+    const prevSize = renderer.getSize(new THREE.Vector2()), prevPR = renderer.getPixelRatio();
+    const gridWas = grid.visible, personWas = person.visible; grid.visible = false; person.visible = false;
+    renderer.setPixelRatio(1); renderer.setSize(W, H, false); camFor(p); applyPlace(); grid.visible = false; person.visible = false;
+    renderer.render(scene, cam);
+    const comp = document.createElement('canvas'); comp.width = W; comp.height = H; const cx = comp.getContext('2d'); cx.drawImage(img, 0, 0, W, H); cx.drawImage(cv, 0, 0, W, H);
+    // mask: model in white, nothing else
+    const mats = []; const white = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+    holder.traverse((o) => { if (o.isMesh) { mats.push([o, o.material]); o.material = white; } });
+    const groundWas = ground.visible; ground.visible = false; const env = scene.environment; scene.environment = null;
+    renderer.setClearColor(0x000000, 1); renderer.render(scene, cam);
+    const mask = document.createElement('canvas'); mask.width = W; mask.height = H; mask.getContext('2d').drawImage(cv, 0, 0, W, H);
+    mats.forEach(([o, m]) => { o.material = m; }); ground.visible = groundWas; scene.environment = env; renderer.setClearColor(0x000000, 0);
+    renderer.setPixelRatio(prevPR); renderer.setSize(prevSize.x, prevSize.y, false); grid.visible = gridWas; person.visible = personWas; draw();
+    return { composite: comp.toDataURL('image/jpeg', 0.92), mask: mask.toDataURL('image/png'), w: W, h: H };
+  }
+  return { open, resize, busy, rotate: rotateBy, refresh: draw, ensureModel, exportShot };
+})();
+async function loadModel() { await photo3d.ensureModel(); }
+function nextTab() { const n = S.photos.find((p) => p.status === 'todo'); openTab(n ? n.i : 'plan'); }
+
+/* ======================= checklist + submit ======================= */
+function checks() {
+  const items = [['Spot A placed on the site plan', !!S.spots.A], ...S.photos.map((p, i) => [`Photo ${i + 1} ${p.status === 'skip' ? 'skipped' : 'placed'}`, p.status !== 'todo'])];
+  if (!S.photos.length) items.push(['No photos in this request', true]);
+  $('checks').innerHTML = items.map(([t, ok]) => `<div class="check ${ok ? 'ok' : ''}"><span class="d"></span>${esc(t)}</div>`).join('');
+  const ready = items.every(([, ok]) => ok) && S.photos.some((p) => p.status === 'done') && !!PRODUCTS[S.product].glb;
+  $('submitBtn').disabled = !ready || S.submitted;
+  $('submitNote').textContent = S.submitted ? 'Submitted.' : ready ? 'Ready: submit sends the plan, notes and placed photos to image processing.' : 'Place spot A and every photo (or skip it) to submit.';
+}
+function planSnapshot() {   // the plan as the team placed it, at 1600 px, for the PDF
+  const prev = { ...S.view, PW, PH, DPR }; PW = PH = 1600 / 2; DPR = 2; pc.width = pc.height = 1600;
+  const pts = Object.values(S.spots).filter(Boolean).flatMap(spotPoly);
+  if (pts.length) { const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]); S.view.x = (Math.min(...xs) + Math.max(...xs)) / 2; S.view.y = (Math.min(...ys) + Math.max(...ys)) / 2;
+    S.view.s = Math.min(8, PW / (Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 30)); }
+  const sel = S.sel; S.sel = null; drawPlan(); const url = pc.toDataURL('image/jpeg', 0.9); S.sel = sel;
+  Object.assign(S.view, { x: prev.x, y: prev.y, s: prev.s }); PW = prev.PW; PH = prev.PH; DPR = prev.DPR; sizePlan(); drawPlan(); return url;
+}
+$('submitBtn').onclick = async () => {
+  $('submitBtn').disabled = true; $('submitNote').textContent = 'Preparing…';
+  const pkg = { v: 1, request: S.req.id || null, at: new Date().toISOString(), product: S.product, productName: PRODUCTS[S.product].name,
+    customer: { name: S.req.name, address: S.req.address },
+    plan: { lat: S.plan.lat, lng: S.plan.lng, zoom: S.plan.zoom, mpp: S.plan.mpp, spots: S.spots, image: planSnapshot() },
+    notes: { A: $('noteA').value, B: $('noteB').value, C: $('noteC').value, expert: $('expert').value, closing: $('closing').value },
+    photos: S.photos.map((p) => ({ index: p.i, status: p.status, hfov: p.hfov, horizon: p.horizon, autoHorizon: p.auto, camH: p.camH, place: p.place, sunAz: p.sunAz,
+      composite: p.out ? p.out.composite : null, mask: p.out ? p.out.mask : null })) };
+  try {
+    if (S.req.saveUrl) {
+      const r = await fetch(S.req.saveUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pkg) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+      S.submitted = true; $('submitNote').textContent = 'Submitted. It is queued for image processing.';
+    } else {   // test mode: keep a copy so the AI step can be tested with it
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(pkg)], { type: 'application/json' })); a.download = 'backyard-package.json'; a.click();
+      S.submitted = true; $('submitNote').textContent = 'Test mode: the package was saved as a file.';
+    }
+  } catch (e) { $('submitNote').textContent = 'Could not submit: ' + e.message; $('submitBtn').disabled = false; return; }
+  checks();
+};
+window.__bb = { S, photo3d, drawPlan, planSnapshot };
+boot();
+</script>
+</body></html>
