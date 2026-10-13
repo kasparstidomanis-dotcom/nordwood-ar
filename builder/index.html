@@ -75,7 +75,7 @@
         <div class="grp"><button id="rotL" title="Rotate left 15° (Q)">↺ 15°</button><button id="rotR" title="Rotate right 15° (E)">↻ 15°</button><button id="rot90">Turn 90°</button><button id="delSpot">Remove</button></div>
         <label><input type="checkbox" id="satNatural"> Full colour</label>
       </div>
-      <p class="note">Pick A, B or C, then click the map to drop it. Drag to move, use the round arrows (or <kbd>Q</kbd>/<kbd>E</kbd>) to turn 15°. The scale comes from Google and is exact; the outlines are the real wall footprints.</p>
+      <p class="note">Pick A, B or C, then click the map to drop it. Drag to move. Turn with the round arrows: click = 15°, drag = free (2° steps). Keys <kbd>Q</kbd>/<kbd>E</kbd> 15°, with <kbd>Shift</kbd> 2°. The scale comes from Google and is exact; the outlines are the real wall footprints.</p>
     </div>
     <div id="photoView" hidden>
       <div class="stage"><div class="photoWrap" id="photoWrap"><img class="bg" id="photoImg" alt=""><canvas id="threeCv"></canvas>
@@ -91,7 +91,7 @@
         <label>Sun <input type="range" id="pSun" min="0" max="359" value="220" style="width:110px"></label>
         <div class="grp"><button id="pSkip">Skip photo</button><button id="pDone" class="on">Looks right ✓</button></div>
       </div>
-      <p class="note">Drag the greenhouse to move it on the ground; click anywhere on the lawn to jump it there. If it looks too big or too small, drag the yellow <b>Eye level</b> line until the grid lies flat on the lawn. Size is always the real size.</p>
+      <p class="note">Drag the greenhouse to move it on the ground; click anywhere on the lawn to jump it there. Round arrows: click = 15°, drag sideways = free turn (2° steps). If it looks too big or too small, drag the yellow <b>Eye level</b> line until the grid lies flat on the lawn. Size is always the real size.</p>
     </div>
   </section>
   <aside>
@@ -277,6 +277,7 @@ function drawSpot(c, k, sp) {
   if (on) { // dimension text + rotate handles at the two upper corners of the bounding box
     c.font = '600 11px Segoe UI'; c.fillStyle = '#fff'; c.strokeStyle = 'rgba(0,0,0,.7)'; c.lineWidth = 3; const dim = PRODUCTS[S.product].size;
     c.strokeText(dim, minX, maxY + 16); c.fillText(dim, minX, maxY + 16);
+    if (S.rotLabel != null) { const t = sp.rot + '°'; c.font = '700 14px Segoe UI'; c.strokeText(t, maxX + 10, (minY + maxY) / 2); c.fillText(t, maxX + 10, (minY + maxY) / 2); }
     const half = Math.max((maxX - minX) / 2 + 18, 30), mid = (minX + maxX) / 2, hy = minY - 12;
     for (const [hx, dir] of [[mid - half, -1], [mid + half, 1]]) { rotHandles.push({ x: hx, y: hy, dir }); drawRotIcon(c, hx, hy, -dir); }
   }
@@ -292,7 +293,8 @@ let pdrag = null;
 pc.addEventListener('pointerdown', (e) => {
   const r = pc.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
   const h = rotHandles.find((q) => Math.hypot(q.x - sx, q.y - sy) < 16);
-  if (h) { rotate(h.dir * 15); return; }
+  if (h) { const sp = S.spots[S.sel], [cx0, cy0] = toScr(sp.x, sp.y);
+    pdrag = { rot: true, dir: h.dir, cx: cx0, cy: cy0, a0: Math.atan2(sy - cy0, sx - cx0), r0: sp.rot, sx, sy, moved: false }; pc.setPointerCapture(e.pointerId); return; }
   const [mx, my] = toM(sx, sy);
   for (const k of ['A', 'B', 'C']) { const sp = S.spots[k]; if (sp && inPoly(mx, my, spotPoly(sp))) { S.sel = k; pdrag = { k, dx: sp.x - mx, dy: sp.y - my }; renderSpots(); drawPlan(); pc.setPointerCapture(e.pointerId); return; } }
   if (!S.spots[S.sel]) { S.spots[S.sel] = { x: mx, y: my, rot: S.spots.A ? S.spots.A.rot : 0 }; pdrag = { k: S.sel, dx: 0, dy: 0 }; afterSpotChange(); pc.setPointerCapture(e.pointerId); return; }
@@ -300,11 +302,15 @@ pc.addEventListener('pointerdown', (e) => {
 });
 pc.addEventListener('pointermove', (e) => {
   if (!pdrag) return; const r = pc.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  if (pdrag.rot) {   // free rotation around the footprint centre, snapped to 2°
+    if (!pdrag.moved && Math.hypot(sx - pdrag.sx, sy - pdrag.sy) < 4) return; pdrag.moved = true;
+    const a = Math.atan2(sy - pdrag.cy, sx - pdrag.cx), deg = (a - pdrag.a0) * 180 / Math.PI;
+    S.spots[S.sel].rot = ((Math.round((pdrag.r0 + deg) / 2) * 2) % 360 + 360) % 360; S.rotLabel = S.spots[S.sel].rot; drawPlan(); return; }
   if (pdrag.pan) { S.view.x = pdrag.vx - (sx - pdrag.sx) / S.view.s; S.view.y = pdrag.vy - (sy - pdrag.sy) / S.view.s; }
   else { const [mx, my] = toM(sx, sy); Object.assign(S.spots[pdrag.k], { x: mx + pdrag.dx, y: my + pdrag.dy }); }
   drawPlan();
 });
-pc.addEventListener('pointerup', () => { pdrag = null; pc.style.cursor = 'grab'; });
+pc.addEventListener('pointerup', () => { if (pdrag && pdrag.rot && !pdrag.moved) rotate(pdrag.dir * 15); pdrag = null; S.rotLabel = null; pc.style.cursor = 'grab'; drawPlan(); });
 pc.addEventListener('wheel', (e) => { e.preventDefault(); const r = pc.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top, [mx, my] = toM(sx, sy);
   S.view.s *= e.deltaY < 0 ? 1.15 : 1 / 1.15; const [nx, ny] = toM(sx, sy); S.view.x += mx - nx; S.view.y += my - ny; drawPlan(); }, { passive: false });
 function rotate(d) { if (S.tab !== 'plan') return photo3d.rotate(d); const sp = S.spots[S.sel]; if (!sp) return; sp.rot = (sp.rot + d + 360) % 360; drawPlan(); }
@@ -312,7 +318,7 @@ $('rotL').onclick = () => rotate(-15); $('rotR').onclick = () => rotate(15); $('
 $('delSpot').onclick = () => { S.spots[S.sel] = null; afterSpotChange(); };
 document.addEventListener('keydown', (e) => {
   if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
-  if (e.key === 'q' || e.key === 'Q') rotate(-15); if (e.key === 'e' || e.key === 'E') rotate(15);
+  if (e.key === 'q' || e.key === 'Q') rotate(e.shiftKey ? -2 : -15); if (e.key === 'e' || e.key === 'E') rotate(e.shiftKey ? 2 : 15);
   if (S.tab === 'plan' && ['a', 'b', 'c'].includes(e.key.toLowerCase()) && !e.ctrlKey) { S.sel = e.key.toUpperCase(); renderSpots(); drawPlan(); }
 });
 function renderSpots() {
@@ -467,7 +473,14 @@ const photo3d = (() => {
     draw(); });
   $('hzGrip').addEventListener('pointerup', () => { hdrag = false; });
   function rotateBy(d) { if (!cur || !cur.place) return; cur.place.rot = (cur.place.rot + d + 360) % 360; draw(); }
-  $('pRotL').onclick = () => rotateBy(15); $('pRotR').onclick = () => rotateBy(-15); $('pRot90').onclick = () => rotateBy(90);
+  for (const [id, dir] of [['pRotL', 1], ['pRotR', -1]]) {
+    const btn = $(id); let rd = null;
+    btn.addEventListener('pointerdown', (e) => { if (!cur || !cur.place) return; rd = { x: e.clientX, r0: cur.place.rot, moved: false }; btn.setPointerCapture(e.pointerId); e.preventDefault(); });
+    btn.addEventListener('pointermove', (e) => { if (!rd) return; const dx = e.clientX - rd.x; if (!rd.moved && Math.abs(dx) < 4) return; rd.moved = true;
+      cur.place.rot = ((Math.round((rd.r0 - dx * 0.5) / 2) * 2) % 360 + 360) % 360; $('photoHint').textContent = 'Turned to ' + cur.place.rot + '°'; draw(); });
+    btn.addEventListener('pointerup', () => { if (rd && !rd.moved) rotateBy(dir * 15); rd = null; hint(); });
+  }
+  $('pRot90').onclick = () => rotateBy(90);
   $('pMirror').onclick = () => { if (cur && cur.place) { cur.place.mirror = !cur.place.mirror; draw(); } };
   $('pGrid').onclick = (e) => { showGrid = !showGrid; e.target.classList.toggle('on', showGrid); draw(); };
   $('pPerson').onclick = (e) => { showPerson = !showPerson; e.target.classList.toggle('on', showPerson); draw(); };
