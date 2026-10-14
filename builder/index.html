@@ -63,7 +63,7 @@
   <div class="who" id="who"><span class="pill">Test mode</span></div>
   <div class="sp"></div>
   <a id="backLink" href="#" hidden>All requests</a>
-  <button class="primary" id="submitBtn" disabled>Submit for image processing</button>
+  <button class="primary" id="submitBtn" disabled>Submit for AI images</button>
 </header>
 <main>
   <section>
@@ -77,7 +77,7 @@
         <label>Look <select id="planLook"><option value="art">Drawn plan</option><option value="muted">Satellite (soft)</option><option value="sat">Satellite</option></select></label>
         <label class="ghostBtn" title="A drawn version of this satellite map, made once per request">Drawn plan file <input type="file" id="artFile" accept="image/*" style="max-width:190px"></label>
       </div>
-      <p class="note">Pick A, B or C, then click the map to drop it. Drag to move. Turn with the round arrows: click = 15°, drag = free (2° steps). Keys <kbd>Q</kbd>/<kbd>E</kbd> 15°, with <kbd>Shift</kbd> 2°. The scale comes from Google and is exact; the outlines are the real wall footprints.</p>
+      <p class="note">Optional. Pick A (or B, C), then click the map to drop it; the customer can move it on their page. Drag to move. Turn with the round arrows: click = 15°, drag = free (2° steps). Keys <kbd>Q</kbd>/<kbd>E</kbd> 15°, with <kbd>Shift</kbd> 2°. The scale comes from Google and is exact; the outlines are the real wall footprints.</p>
     </div>
     <div id="photoView" hidden>
       <div class="stage"><div class="photoWrap" id="photoWrap"><img class="bg" id="photoImg" alt=""><canvas id="threeCv"></canvas>
@@ -100,9 +100,7 @@
     <div class="card" id="custCard"><h2>Request</h2><div class="kv" id="custKv"></div>
       <label style="margin-top:10px">Greenhouse <select id="product"></select></label></div>
     <div class="card" id="planCard"><h2>Site plan spots</h2><div class="spots" id="spots"></div>
-      <label>Why spot A <span>(recommended)</span><textarea id="noteA">Full afternoon sun, level lawn and a short walk from the back door.</textarea></label>
-      <label>Spot B<textarea id="noteB">Good sun and more privacy; needs a short gravel path.</textarea></label>
-      <label>Spot C<textarea id="noteC">Works too, but nearby trees shade it later in the day.</textarea></label>
+      <label>Note for the customer <span>(editable again at the verify step)</span><textarea id="noteA">I placed it where it gets the most afternoon sun with an easy walk from the back door.</textarea></label><textarea id="noteB" hidden></textarea><textarea id="noteC" hidden></textarea>
       <label>Expert<input type="text" id="expert" value="Kaspar"></label>
       <label>Closing line<textarea id="closing">Happy to walk you through the plan and answer any questions about the base, delivery or sizing.</textarea></label></div>
     <div class="card"><h2>Checklist</h2><div id="checks"></div><p class="note" id="submitNote"></p></div>
@@ -137,8 +135,7 @@ const PRODUCTS = {
               outline: [[T_WING, 0], [13.82 * FT, 0], [13.82 * FT, T_LEN], [T_WING, T_LEN], [T_WING, T_W0 + T_WLEN], [0, T_W0 + T_WLEN], [0, T_W0], [T_WING, T_W0]] },
   classic:  { name: 'Nordwood Classic', glb: 'nordwood-classic.glb', w: 9.84 * FT, h: 15.81 * FT, size: "15'10\" x 9'10\"" },
   arrow:    { name: 'Nordwood Arrow', glb: 'nordwood-arrow.glb', w: 7.87 * FT, h: 11.91 * FT, size: "11'11\" x 7'10\"" },
-  'arrow-shed': { name: 'Nordwood Arrow with Shed', glb: null, w: 7.87 * FT, h: 18.08 * FT, size: "18'1\" x 7'10\"", zone: [0, 11.91 * FT, 7.87 * FT, 6.17 * FT] },
-  heritage: { name: 'Heritage Nord (outline approx.)', glb: 'nordwood.glb', w: 4.257, h: 4.791, size: "15'9\" x 14'" },
+  'arrow-mini': { name: 'Nordwood Arrow Mini', glb: 'nordwood-arrow.glb', zscale: 8 / 11.91, w: 7.87 * FT, h: 8 * FT, size: "8' x 7'10\"" },   // the Arrow model shortened to 8 ft until the real model arrives
 };
 const outlineOf = (p) => p.outline || [[0, 0], [p.w, 0], [p.w, p.h], [0, p.h]];
 const S = {
@@ -168,22 +165,25 @@ async function boot() {
 window.__bbStart = (cfg) => { $('localModal').hidden = true; return start(cfg); };   // used by the headless tests
 async function start(req) {
   S.req = req; S.product = PRODUCTS[req.product] ? req.product : 'tshape'; $('product').value = S.product;
-  $('who').innerHTML = `<b>${esc(req.name || 'Customer')}</b><span class="pill">${esc(PRODUCTS[S.product].name)}</span>${req.mode === 'local' ? '<span class="pill">Test mode</span>' : ''}`;
+  $('who').innerHTML = `<b>${esc(req.name || 'Customer')}</b><span class="pill">${esc(PRODUCTS[S.product].name)}${req.modelUnsure ? ' (they were not sure: pick the model)' : ''}</span>${req.mode === 'local' ? '<span class="pill">Test mode</span>' : ''}`;
   $('custKv').innerHTML = [['Name', req.name], ['Email', req.email], ['Phone', req.phone], ['Address', [req.address, req.zip].filter(Boolean).join(' ')], ['Notes', req.notes]]
     .filter(([, v]) => v).map(([k, v]) => `<div>${k}</div><div>${esc(v)}</div>`).join('');
   if (req.listUrl) { $('backLink').href = req.listUrl; $('backLink').hidden = false; }
   S.photos = (req.photos || []).map((p, i) => ({ i, url: typeof p === 'string' ? p : p.url, file: p.file || null, hfov: 63, camH: 1.6, horizon: null, auto: null,
     depthState: 'waiting', place: null, status: 'todo', sunAz: 220 }));
-  renderTabs(); renderSpots(); checks();
+  S.tab = S.photos.length ? 0 : 'plan'; renderTabs(); renderSpots(); checks();
+  $('planView').hidden = S.tab !== 'plan'; $('photoView').hidden = S.tab === 'plan'; $('planCard').hidden = S.tab !== 'plan';
   loadPlan(19);
+  if (S.tab === 0) photo3d.open(S.photos[0]);
   analysePhotos();
 }
 $('product').onchange = () => { S.product = $('product').value; drawPlan(); if (S.tab !== 'plan') loadModel().then(() => photo3d.refresh()); checks(); };
 
 /* ======================= tabs ======================= */
 function renderTabs() {
-  const t = [`<div class="tab ${S.tab === 'plan' ? 'on' : ''}" data-t="plan"><div class="ic">🗺</div><div>Site plan<small class="${S.spots.A ? 'ok' : 'warn'}">${S.spots.A ? 'A placed' : 'place A'}</small></div></div>`];
+  const t = [];
   S.photos.forEach((p, i) => t.push(`<div class="tab ${S.tab === i ? 'on' : ''}" data-t="${i}"><img src="${esc(p.url)}" alt=""><div>Photo ${i + 1}<small class="${p.status === 'done' ? 'ok' : p.status === 'skip' ? '' : 'warn'}">${p.status === 'done' ? 'placed ✓' : p.status === 'skip' ? 'skipped' : p.depthState === 'running' ? 'finding ground…' : 'to place'}</small></div></div>`));
+  t.push(`<div class="tab ${S.tab === 'plan' ? 'on' : ''}" data-t="plan"><div class="ic">🗺</div><div>Site plan<small class="${S.spots.A ? 'ok' : ''}">${S.spots.A ? 'spot A set' : 'optional'}</small></div></div>`);
   $('tabs').innerHTML = t.join('');
   $('tabs').querySelectorAll('.tab').forEach((el) => el.onclick = () => openTab(el.dataset.t === 'plan' ? 'plan' : +el.dataset.t));
 }
@@ -424,7 +424,7 @@ const photo3d = (() => {
     holder.clear(); model = null; modelKey = S.product;
     const p = PRODUCTS[S.product]; if (!p.glb) { busy('No 3D model for ' + p.name + ' yet'); return; }
     busy('Loading the 3D model…'); const m = await loadModelFor(S.product); busy(cur && cur.depthState === 'running' ? 'Finding the ground…' : '');
-    model = m.clone(true); const box = new THREE.Box3().setFromObject(model), c = box.getCenter(new THREE.Vector3());
+    model = m.clone(true); if (p.zscale) model.scale.z = p.zscale; const box = new THREE.Box3().setFromObject(model), c = box.getCenter(new THREE.Vector3());
     model.position.set(-c.x, -box.min.y, -c.z);  // centre on the origin, standing on the ground
     holder.add(model);
   }
@@ -529,21 +529,22 @@ const photo3d = (() => {
     const mask = document.createElement('canvas'); mask.width = W; mask.height = H; mask.getContext('2d').drawImage(cv, 0, 0, W, H);
     mats.forEach(([o, m]) => { o.material = m; }); ground.visible = groundWas; scene.environment = env; renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(prevPR); renderer.setSize(prevSize.x, prevSize.y, false); grid.visible = gridWas; person.visible = personWas; draw();
-    return { composite: comp.toDataURL('image/jpeg', 0.92), mask: mask.toDataURL('image/png'), w: W, h: H };
+    let fy = 0.55; try { const md = mask.getContext('2d').getImageData(0, 0, W, H).data; let top = H, bot = 0; for (let y = 0; y < H; y += 2) { for (let x = 0; x < W; x += 4) { if (md[(y * W + x) * 4] > 128) { if (y < top) top = y; if (y > bot) bot = y; break; } } } if (bot > top) fy = ((top + bot) / 2) / H; } catch (e) {}
+    return { composite: comp.toDataURL('image/jpeg', 0.92), mask: mask.toDataURL('image/png'), w: W, h: H, focusY: fy };
   }
   return { open, resize, busy, rotate: rotateBy, refresh: draw, ensureModel, exportShot };
 })();
 async function loadModel() { await photo3d.ensureModel(); }
-function nextTab() { const n = S.photos.find((p) => p.status === 'todo'); openTab(n ? n.i : 'plan'); }
+function nextTab() { const n = S.photos.find((p) => p.status === 'todo'); openTab(n ? n.i : 'plan'); if (!n) $('planHint').textContent = 'Optional: click where you would put it (spot A). The customer can move it on their page.'; }
 
 /* ======================= checklist + submit ======================= */
 function checks() {
-  const items = [['Spot A placed on the site plan', !!S.spots.A], ...S.photos.map((p, i) => [`Photo ${i + 1} ${p.status === 'skip' ? 'skipped' : 'placed'}`, p.status !== 'todo'])];
+  const items = [...S.photos.map((p, i) => [`Photo ${i + 1} ${p.status === 'skip' ? 'skipped' : 'placed'}`, p.status !== 'todo']), ['Site plan spot A (optional)', true]];
   if (!S.photos.length) items.push(['No photos in this request', true]);
   $('checks').innerHTML = items.map(([t, ok]) => `<div class="check ${ok ? 'ok' : ''}"><span class="d"></span>${esc(t)}</div>`).join('');
   const ready = items.every(([, ok]) => ok) && S.photos.some((p) => p.status === 'done') && !!PRODUCTS[S.product].glb;
   $('submitBtn').disabled = !ready || S.submitted;
-  $('submitNote').textContent = S.submitted ? 'Submitted.' : ready ? 'Ready: submit sends the plan, notes and placed photos to image processing.' : 'Place spot A and every photo (or skip it) to submit.';
+  $('submitNote').textContent = S.submitted ? 'Submitted.' : ready ? 'Ready: submit sends the placed photos to the AI (3 versions each, about a minute per photo).' : 'Place the greenhouse in every photo (or skip it) to submit.';
 }
 function planSnapshot() {   // the plan as the team placed it, at 1600 px, for the PDF
   const prev = { ...S.view, PW, PH, DPR }; PW = PH = 1600 / 2; DPR = 2; pc.width = pc.height = 1600;
@@ -557,10 +558,10 @@ $('submitBtn').onclick = async () => {
   $('submitBtn').disabled = true; $('submitNote').textContent = 'Preparing…';
   const pkg = { v: 1, request: S.req.id || null, at: new Date().toISOString(), product: S.product, productName: PRODUCTS[S.product].name,
     customer: { name: S.req.name, address: S.req.address },
-    plan: { lat: S.plan.lat, lng: S.plan.lng, zoom: S.plan.zoom, mpp: S.plan.mpp, spots: S.spots, image: planSnapshot() },
+    plan: { lat: S.plan.lat, lng: S.plan.lng, zoom: S.plan.zoom, mpp: S.plan.mpp, spots: S.spots },
     notes: { A: $('noteA').value, B: $('noteB').value, C: $('noteC').value, expert: $('expert').value, closing: $('closing').value },
     photos: S.photos.map((p) => ({ index: p.i, status: p.status, hfov: p.hfov, horizon: p.horizon, autoHorizon: p.auto, camH: p.camH, place: p.place, sunAz: p.sunAz,
-      composite: p.out ? p.out.composite : null, mask: p.out ? p.out.mask : null })) };
+      w: p.out ? p.out.w : null, h: p.out ? p.out.h : null, focusY: p.out ? p.out.focusY : null, composite: p.out ? p.out.composite : null, mask: p.out ? p.out.mask : null })) };
   try {
     if (S.req.saveUrl) {
       const r = await fetch(S.req.saveUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pkg) });

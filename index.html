@@ -449,6 +449,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       <p class="err" id="fErr">Please add your name, a mobile number and an email.</p>
       <p class="consent">By continuing, you agree that YourGreenHouses may call and text you about your design and our products at the number above, including by automated means. Consent is not a condition of purchase. Message and data rates may apply. Reply STOP to opt out.</p>
       <button type="button" class="btn" id="toPhotos">Next <svg><use href="#arr"/></svg></button>
+    <p class="hint" style="font-size:12px;margin:10px 0 0">By continuing you agree that a greenhouse expert may contact you about your design (call, text or email). You can opt out anytime.</p>
     </div>
 
     <div class="step" data-step="6">
@@ -503,6 +504,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
         <p class="mcap__size" id="mSize">&nbsp;</p>
         <div class="mdots" id="mDots"></div>
       </div>
+      <p class="hint" id="subMsg" hidden></p>
       <button type="button" class="btn ar-go" id="arGo">See it in my yard <svg><use href="#arr"/></svg></button>
       <div class="oob" id="oob" hidden>
         <p class="oob__h">One last tap to see it in your yard</p>
@@ -640,7 +642,36 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
     else { inp.select(); document.execCommand('copy'); done(); }
   });
 
-  document.getElementById('submit').addEventListener('click', function () { showAR(); });
+  var WORKER = 'https://ygh-backyard.raitislm.workers.dev';
+  function shrink(file) {   // phone photos are 3-12 MB: resize to 2000 px in the browser before upload
+    return new Promise(function (res) {
+      var img = new Image(), u = URL.createObjectURL(file);
+      img.onload = function () { var k = Math.min(1, 2000 / Math.max(img.width, img.height)); if (k === 1 && file.size < 2500000) { URL.revokeObjectURL(u); return res(file); }
+        var c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function (b) { URL.revokeObjectURL(u); res(b ? new File([b], (file.name || 'photo').replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : file); }, 'image/jpeg', 0.9); };
+      img.onerror = function () { res(file); }; img.src = u;
+    });
+  }
+  async function sendRequest() {
+    var msg = document.getElementById('subMsg'); msg.hidden = false; msg.textContent = 'Sending your photos…';
+    try {
+      var name = document.getElementById('fName').value.trim().split(/\s+/), fd = new FormData();
+      fd.append('firstname', name.shift() || ''); fd.append('lastname', name.join(' '));
+      fd.append('email', document.getElementById('fEmail').value.trim()); fd.append('phone', document.getElementById('fPhone').value.trim());
+      fd.append('address', document.getElementById('fAddr').value.trim()); fd.append('zip', document.getElementById('fZip').value.trim());
+      fd.append('model', 'unsure'); fd.append('consent', '1'); fd.append('page', location.href.split('#')[0]);
+      var quiz = Object.keys(answers).map(function (k) { return k + ': ' + answers[k]; }).join(' | ');
+      fd.append('notes', [quiz, document.getElementById('fNote').value.trim()].filter(Boolean).join(' | ').slice(0, 1500));
+      if (!photosLater) for (var i = 0; i < Math.min(5, fp.files.length); i++) fd.append('photo', await shrink(fp.files[i]));
+      else fd.append('later', '1');
+      try { var hutk = document.cookie.match(/hubspotutk=([^;]+)/); if (hutk) fd.append('hutk', hutk[1]); } catch (e) {}
+      var r = await fetch(WORKER + '/submit', { method: 'POST', body: fd }); var j = await r.json().catch(function () { return {}; });
+      if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+      msg.textContent = photosLater ? "Got it. Text your photos to us and we'll get started." : 'Got your photos. Your design is on its way by email.';
+      try { sessionStorage.setItem('nw_request', j.id); } catch (e) {}
+    } catch (e) { msg.textContent = 'We could not send your details (' + e.message + '). Please call us or try again.'; console.error(e); }
+  }
+  document.getElementById('submit').addEventListener('click', function () { showAR(); sendRequest(); });
   function showAR(startModel) {
     show(9);
     var mv = document.getElementById('mv');
