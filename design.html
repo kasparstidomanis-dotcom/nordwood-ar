@@ -59,6 +59,17 @@ a{color:inherit;text-decoration:none}
 .rel{position:relative!important}
 .tag{position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:3px;background:rgba(0,46,23,.9);color:#fff;font:800 9pt/1 var(--ygh-font-highlight);letter-spacing:.14em;text-transform:uppercase;z-index:2}
 .tag.g{background:var(--ygh-green)}
+.ba{--pos:50%;user-select:none;-webkit-user-select:none;touch-action:pan-y}
+.ba__layer{position:absolute;inset:0}
+.ba__layer img{display:block;width:100%;height:100%;object-fit:cover}
+.ba__before{clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
+.ba .tag{z-index:3;transition:opacity .15s linear;pointer-events:none}
+.ba .ba__tag--r{left:auto;right:12px}
+.ba__line{position:absolute;top:0;bottom:0;left:var(--pos);z-index:2;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 0 1px rgba(0,46,23,.15);pointer-events:none}
+.ba__knob{position:absolute;top:50%;left:var(--pos);z-index:3;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;pointer-events:none;color:var(--ygh-green-dark)}
+.ba__knob svg{width:16px;height:16px}
+.ba__count{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:3;padding:5px 10px;border-radius:20px;background:rgba(0,46,23,.75);color:#fff;font:700 9pt/1 var(--ygh-font-body);pointer-events:none}
+.ba input{position:absolute;inset:0;z-index:4;width:100%;height:100%;margin:0;opacity:0;cursor:ew-resize}
 
 /* icon row, like Alex's 4 icons */
 .icons{display:grid;grid-template-columns:repeat(4,1fr);gap:.2in;text-align:center}
@@ -169,7 +180,7 @@ a{color:inherit;text-decoration:none}
 html:has(.wait),body:has(.wait){background:#fff}
 .mob #doc{display:none}
 @media print{ #mdoc{display:none!important} .mob #doc{display:block!important} }
-#mdoc{background:#fff;padding-bottom:80px}
+#mdoc{background:#fff;padding-bottom:0}
 #mdoc *{box-sizing:border-box}
 .mpage{position:relative}
 .mpage .mlight{padding:40px 20px 28px}
@@ -223,6 +234,60 @@ html:has(.wait),body:has(.wait){background:#fff}
 .mob .dl svg{width:18px;height:18px}
 .mpage .mlight .qby,.mpage .mlight .qby span{color:var(--ygh-green-dark)!important}
 .mpage .mlight .qby span{color:var(--ygh-green)!important}
+.wlive{display:none}
+.vframe.live{background:#000!important}
+.vframe.live .img,.vframe.live .play,.vframe.live .tag{display:none}
+.vframe.live .wlive{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;z-index:3}
+.vframe.live .wlive wistia-player{display:block;height:100%;aspect-ratio:16/9;max-width:100%}
+.vframe.live.tall .wlive wistia-player{aspect-ratio:9/16;height:auto;width:100%}
+.mpage .vframe.live.tall{aspect-ratio:9/16!important;width:100%;max-width:420px;margin-left:auto;margin-right:auto}
+@media print{.vframe .img,.vframe .tag{display:block!important}.vframe .play{display:flex!important}.vframe{background:#0d1a12!important}}
+.arlive{display:none}
+.arframe .arbtn{border:0;cursor:pointer}
+.arframe.live .img{display:none}
+.arframe.live{background:linear-gradient(180deg,var(--ygh-green-mint) 0%,#e6efe2 100%)}
+.arframe.live .arlive{display:block;position:absolute;inset:0;z-index:2}
+.arframe.live .arlive model-viewer{width:100%;height:100%;--poster-color:transparent;--progress-bar-color:var(--ygh-green);cursor:pointer}
+.arframe .arhint{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:calc(100% - 24px);margin:0;padding:8px 14px;border-radius:99px;background:var(--ygh-green-dark);color:#fff;font:600 13px/1.3 var(--ygh-font-body);pointer-events:none}
+.arframe .arhint svg{width:18px;height:18px;flex:none;stroke:#fff;fill:none;stroke-width:3}
+.arframe.live .tag{display:none}
+.arframe.live .arbtn{z-index:4}
+.arframe .arbtn[hidden]{display:none}
+.mpage .arframe.live{aspect-ratio:4/3!important}
+@media print{.arframe .img{display:block!important}.arframe .arbtn{display:none!important}}
+/* ---------- phone layout, mobile first ---------- */
+#mdoc .mpage .mlight{padding:48px 20px 40px}
+#mdoc .mpage .mdark{padding:40px 20px 48px}
+#mdoc .mpage .mlight > * + *, #mdoc .mpage .mdark > * + *{margin-top:28px}
+#mdoc .mpage .mlight > :first-child, #mdoc .mpage .mdark > .wrap.c{text-align:center}
+#mdoc .mpage .h1{text-wrap:balance}
+#mdoc .mpage .h1 em{white-space:nowrap}
+#mdoc .mpage .mlight > :first-child .p{margin-left:auto;margin-right:auto;max-width:330px}
+#mdoc .mpage .p{font-size:16px!important;line-height:1.55}
+#mdoc .mpage .h1 + .p, #mdoc .mpage .h1 ~ .p{margin-top:12px!important}
+#mdoc .mpage.cover .mlight{padding:0 0 36px}
+/* The Yard: one photo, drag to compare */
+#mdoc .mpage .ba{aspect-ratio:4/3!important}
+#mdoc .mpage .ba .tag{font-size:10px;padding:5px 8px;top:10px}
+#mdoc .mpage .ba .ba__tag--l{left:10px} #mdoc .mpage .ba .ba__tag--r{right:10px;left:auto}
+#mdoc .mpage .ba__knob{width:42px;height:42px;margin:-21px 0 0 -21px}
+#mdoc .mpage .ba__count{bottom:10px;font-size:10px}
+/* three-icon rows sit on one line */
+#mdoc .mpage .icons:has(> div:nth-child(3):last-child){grid-template-columns:repeat(3,1fr)!important;gap:22px 8px!important}
+#mdoc .mpage .icons:has(> div:nth-child(3):last-child) .t{font-size:13px}
+#mdoc .mpage .icons:has(> div:nth-child(3):last-child) .s{font-size:12px}
+#mdoc .mpage .icons svg{margin-bottom:10px}
+/* spec titles */
+#mdoc .mpage .spec .title .vs{display:block;margin:6px 0 0}
+#mdoc .mpage .tbl .title{font-size:18px}
+#mdoc .mpage .tbl .r > div{padding:12px 9px}
+/* video: never taller than the screen */
+#mdoc .mpage .vframe.live.tall{width:min(100%, calc(72vh * 9 / 16))!important}
+/* quote blocks breathe */
+#mdoc .mpage .quote{font-size:16px;line-height:1.55}
+#mdoc .mpage .fcard{padding:20px 18px}
+#mdoc .mpage .mlist{margin-top:0}
+
 .play{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:rgba(0,147,74,.94);box-shadow:0 0 0 10px rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;z-index:2}
 .play svg{width:30px;height:30px;margin-left:5px;fill:#fff}
 </style>
@@ -2564,7 +2629,15 @@ var CONFIG = {
   customBuild: '$100,000+',
   windMph: 115,
   weeks: [12,14],
-  arBase: 'https://kasparstidomanis-dotcom.github.io/nordwood-ar/ar.html',
+  arBase: 'https://kasparstidomanis-dotcom.github.io/nordwood-ar/ar.html',   // B2B share page only; the design page never links to it
+  arFiles: {
+    greenhouse: { glb:'nordwood-tshape.glb',     usdz:'nordwood-tshape.usdz' },
+    classic:    { glb:'nordwood-classic.glb',    usdz:'nordwood-classic.usdz' },
+    arrow:      { glb:'nordwood-arrow.glb',      usdz:'nordwood-arrow.usdz' },
+    arrowMini:  { glb:'nordwood-arrow-mini.glb', usdz:'nordwood-arrow-mini.usdz' },
+    heritage:   { glb:'nordwood.glb',            usdz:null }
+  },
+  arSky: 'nordwood-sky.hdr',
   // Lookup service. Empty = no live data (local testing). Endpoints: GET {api}/design/{id}, POST {api}/design/{id}/placement, POST {api}/design/{id}/open
   api: '',
   footprints: {"greenhouse": {"img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANoAAAEUCAYAAABNiCirAAACnUlEQVR42u3WsQ2DMBCGUS5iBoajZAXmYAWXDMcSf1qUCoooCn6vI53P+XSuoSNJMsAPvIwAhAaPMPZ68KnNm+vnm45lX2008HQEoQFCA6GB0AChgdAAoYHQQGiA0EBogNBAaCA0QGggNBAaIDQQGiA0EBoIDRAaCA0QGggNhAYIDYQGQgOEBkIDhAZCA6EBQgOhgdCMAIQGQgOEBkIDoQFCA6EBQgOhgdAAoYHQQGiA0EBowAVjkhgD2GggNODC0/H8MbV5MxKw0UBogNBAaCA0QGggNEBoIDQQGiA0EBoIDRAaCA0QGggNhAYIDYQGQgOEBkIDhAZCA6EBQgOhAUIDoYHQAKGB0EBogNBAaIDQQGggNEBoIDRAaCA0EBogNBAaCA0QGggNEBoIDYQGCA2EBggNhAZCA4QGQgOhAUIDoQFCA6GB0AChgdAAoYHQQGiA0EBoIDRAaCA0QGggNBAaIDQQGiA0EBoIDRAaCA2EBggNhAYIDYQGQgOEBkIDhAZCA6EBQgOhgdAAoYHQAKGB0EBogNBAaCA0QGggNEBoIDQQGiA0EBogNBAaCA0QGggNhAYIDYQGCA2EBkIDhAZCA4QGQgOhAUIDoYHQAKGB0AChgdBAaIDQQGiA0EBoIDRAaCA0EBogNBAaIDQQGggNEBr8h/H8cSz72svBpzZvrh8bDYQG3Ho6VlX1ctgkceXYaCA0QGggNBAaIDQQGiA0EBoIDRAaCA0QGggNhAYIDYQGQgOEBkIDhAZCA6EBQgOhAUIDoYHQAKGB0EBogNBAaIDQQGggNEBoIDRAaCA0EBogNBAaCA0QGggNEBoIDYQGCA2EBggNhAYPUj0dNklc+T1Tm7fP345lX01GaELD0xFsNLi5+avKf+iCN75kJ7pfKhdEAAAAAElFTkSuQmCC", "wFt": 14.3, "lFt": 18.11}, "classic": {"img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJ4AAAD2CAYAAAAnIj5MAAACAklEQVR42u3VsRFAQBCGUWvUcMUJtXB1aOFCxWlipcaMQUDivYzwn29uIzOzg4/1JkB4/Maw/yhtnE3CW9ZpqV48nFqEB8JDeCA8hAfCQ3ggPIQHwkN4CA+Eh/BAeAgPhIfwQHgID4SH8BAeCA/hgfAQHggP4YHwEB7CMwHCQ3ggPIQHwkN4IDyEB8JDeAgPhIfwQHgID4SH8EB4CA+Eh/AQHggP4YHwEB4ID+GB8BAeCA/hITwQHsID4SE8EB7CA+EhPBAewkN4IDyEB8JDeCA8hAfCQ3ggPISH8EB4CA+Eh/BAeAgPhIfwQHgID+GB8BAeCA/hgfAQHggP4YHwEB7CA+EhPBAewgPhITwQHsJDeCZAeAgPhIfwQHgID4SH8EB4CA/hgfAQHggP4YHwEB4ID+GB8BAewgPhITwQHsID4SE8EB7CA+EhPIQHwkN4IDyEB8JDeCA8hAfCQ3gID4SH8EB4CA+Eh/BAeAgPhIfwEB4ID+GB8BAeCA/hgfAQHggP4SE8EB7CA+EhPBAewgPhITwQHsJDeCA8hAfCQ3ggPIQHwkN4CM8ECA/hgfAQHggP4YHwEB4ID+EhPBAewgPhITwQHsID4SE8EB7CQ3ggPIQHwkN4IDyEB8JDeCA8hMdfRWamGe4rbZyP/9ZpqZYRHk4tnLx4Jrj25CpEhE1v2ACWXBnfi1qaWQAAAABJRU5ErkJggg==", "wFt": 10.37, "lFt": 16.14}, "arrow": {"img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAC6CAYAAABm30UAAAABgElEQVR42u3VsQ2AMAxFQYyYgeFSZoXMkRUoGY4lTIvoaPFdB12+npLIzFwoazWBAChse37sR5sm+b+rn8MNgAAQgABMIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACEIAJBIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAAAjCBABAAVUVmZrVD70eb739XP4cA8ARQ7AaoctAvN11ElNnlBh9DGWeytg99AAAAAElFTkSuQmCC", "wFt": 8.4, "lFt": 12.2}, "heritage": {"img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMEAAADoCAYAAABW4YBiAAADEElEQVR42u3dwXEiMRBAUTVFDA7OR1IgDqfgI8GRRPvggnIN4BooGKTp9457Gmv5brE7JUUbQGbmCM8ZETHy879iHXr+2U/PGQKgsoiIjQCobjvaA398f3719DzH3WE/8vMvuQ49/OzXnrPr7dB0Eqz1A8T7Quh+OyQAlrCxBIgARAAiABGM9o0eTAIQARSJ4NYLaWASgAhABCACEAGIAEQAIgARgAhABCACEAGIAFYcgRPoMAlABPD63YYT6DAJLAEigGKmuwoRYBJYAkQAIgARQGnnO8seeUXh3hPivAZBtxE8+uH0ocZ2CAY0Peb/6hWu/72i8Kx7ArwGQXffCeZ+OH14sR2CFRnqHmMwCUAEIAIQAYgARAAiABGACEAEIAIQAYgARAAiABGACEAEIAIQAYgARAAiABGACEAEIAIQATwqM1MEmASWABFAMdOLZkSASWAJEAGIAEQAIgARgAhABFDGcXfYiwBEACKA1lprEREiwCSwBIgARAAiABGACEAEIAIQAYgARAAiABGACEAEIAIQAVTikg4wCUAEFOSSDjAJQAQgAhABiABEACIAEYAIQAQgAhABiICK3F4JJgGIAM7cXgkmAYgARAAiQASZmZYBkwBEACJorV2ezAUmAYgARAAiABGACEAEIAIQAayU2yvBJAARUJDbK8EkABGACEAEcCuC6Wm9YBKACGB9Lu4niIiwLJgEIAKoyf0EYBKACEAEIAJEYAkQAYgARAAiABGACEAEIAIQAYgARAAiABGACEAEIAIQAYgARAAiABGACEAEUEJmpggobzv9g3fcWza9YRyWFKeR0PuDCoVn+vvL3nYI26HWfm/reMcXEstPl98JFtuHzQhPKCzBdggRWAJEACIAEYAIoJLpWxEiwCQYtV6wHYIniIgQASZB75X6K8J2CEQAIgARgAhABCACEAGIAEQAIgARgAigWgQO38IkABGACM4czY5JACIAEYAIQARQOQIn0PEqXZ/r43+M57v2T8h+ccwIoPfDrUTAEhE4gQ4hWIJx3TMp/UK57QcYuqkA2MydvgAAAABJRU5ErkJggg==", "wFt": 12.66, "lFt": 15.22}},
@@ -2626,9 +2699,10 @@ function normalize(r){
   var d={ id:r.id, status:r.status||'ready', firstName:r.firstName, lastName:r.lastName, model:r.model, price:r.price, expert:r.expert,
           purpose:a.purpose||r.purpose, space:a.space||r.space, timing:a.timing||r.timing, budget:a.budget||r.budget,
           preparedDate:r.preparedDate, arUrl:r.arUrl };
-  var p=r.photos||{}, im=r.images||{};
-  d.images={ yardBefore:p.before||im.yardBefore, yardAfter:p.after||im.yardAfter };
-  d.hasYard=!!(d.images.yardBefore&&d.images.yardAfter);
+  /* photos: a list of {before, after} pairs, one Your Yard page each. A single {before, after} still works. */
+  var p=r.photos||{}, im=r.images||{}, list=Array.isArray(p)?p:[{before:p.before||im.yardBefore, after:p.after||im.yardAfter}];
+  d.yards=list.filter(function(y){ return y&&y.before&&y.after; }).map(function(y){ return {before:y.before, after:y.after}; });
+  d.hasYard=d.yards.length>0;
   d.site=r.site||null;
   return d;
 }
@@ -2779,7 +2853,62 @@ function setupVideo(root){
     document.body.appendChild(m); }); });
 }
 
+/* ============================================================ live Wistia player in the page (screen only) */
+var __wistiaLoaded=false;
+function loadWistia(ids){
+  if(!__wistiaLoaded){ __wistiaLoaded=true; var a=document.createElement('script'); a.src='https://fast.wistia.com/player.js'; a.async=true; document.head.appendChild(a); }
+  ids.forEach(function(id){ if(document.querySelector('script[data-wid="'+id+'"]')) return;
+    var b=document.createElement('script'); b.type='module'; b.async=true; b.src='https://fast.wistia.com/embed/'+id+'.js'; b.setAttribute('data-wid',id); document.head.appendChild(b); });
+}
+function setupLiveVideo(root, phone){
+  var id=phone?CONFIG.vsl.phone:CONFIG.vsl.desktop, aspect=phone?'0.5625':'1.7778';
+  [].forEach.call(root.querySelectorAll('[data-wistia]'),function(box){
+    box.innerHTML='<wistia-player media-id="'+id+'" aspect="'+aspect+'" style="background:center/contain no-repeat url(https://fast.wistia.com/embed/medias/'+id+'/swatch)"></wistia-player>';
+    var fr=box.closest('.vframe'); if(fr){ fr.classList.add('live'); fr.classList.toggle('tall',!!phone); fr.removeAttribute('data-video'); fr.addEventListener('click',function(e){ e.preventDefault(); }); }
+  });
+  loadWistia([id]);
+}
+
+/* ============================================================ in-page AR: one model per frame, no switching */
+var __mvLoaded=false;
+function loadModelViewer(){
+  if(__mvLoaded) return; __mvLoaded=true;
+  self.ModelViewerElement=self.ModelViewerElement||{}; self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer@0.22.0/meshopt_decoder.js';
+  var sc=document.createElement('script'); sc.type='module'; sc.src='https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer.min.js'; document.head.appendChild(sc);
+}
+function setupLiveAR(root){
+  var boxes=root.querySelectorAll('[data-ar]'); if(!boxes.length) return;
+  [].forEach.call(boxes,function(box){
+    var id=box.getAttribute('data-ar'), f=CONFIG.arFiles[id]; if(!f) return;
+    var name=(CONFIG.models[id]||{}).name||'Nordwood';
+    box.innerHTML='<model-viewer src="'+f.glb+'"'+(f.usdz?' ios-src="'+f.usdz+'"':'')+' alt="The '+name+', at real size"'+
+      ' ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor" camera-controls touch-action="pan-y" auto-rotate rotation-per-second="14deg"'+
+      ' interaction-prompt="none" camera-orbit="35deg 72deg auto" max-camera-orbit="auto 88deg auto" shadow-intensity="1" shadow-softness="0.8"'+
+      ' exposure="1.05" tone-mapping="neutral" environment-image="'+CONFIG.arSky+'"><span slot="ar-button" hidden></span></model-viewer>'+
+      '<p class="arhint">'+icon('tap')+'<span>Tap the Nordwood to place it</span></p>';
+    var fr=box.closest('.arframe'), mv=box.querySelector('model-viewer'), btn=fr&&fr.querySelector('.arbtn');
+    if(fr) fr.classList.add('live');
+    var down=null;
+    mv.addEventListener('pointerdown',function(e){ down={x:e.clientX,y:e.clientY}; });
+    mv.addEventListener('click',function(e){ var moved=down?Math.abs(e.clientX-down.x)+Math.abs(e.clientY-down.y):0; down=null;
+      var inAR=mv.getAttribute('ar-status')&&mv.getAttribute('ar-status')!=='not-presenting';
+      if(moved<10&&mv.canActivateAR&&!inAR) mv.activateAR(); });
+    if(btn) btn.addEventListener('click',function(){ if(mv.canActivateAR) mv.activateAR(); });
+    mv.addEventListener('load',function(){ if(!mv.canActivateAR){ box.querySelector('.arhint span').textContent='Open this on your phone to place it in your yard'; if(btn) btn.hidden=true; } },{once:true});
+  });
+  loadModelViewer();
+}
+
 /* ============================================================ phone view: pages reflow into one scroll; print keeps letter pages */
+/* before / after slider, same as the landing page: drag to reveal, tags fade with their photo */
+function setupSliders(root){
+  [].forEach.call(root.querySelectorAll('.ba'),function(ba){
+    var rng=ba.querySelector('input'), tb=ba.querySelector('.ba__tag--l'), ta=ba.querySelector('.ba__tag--r');
+    function cl(v){ return Math.max(0,Math.min(1,v)); }
+    function up(){ var pos=+rng.value; ba.style.setProperty('--pos',pos+'%'); tb.style.opacity=cl((pos-12)/20); ta.style.opacity=cl((88-pos)/20); }
+    rng.addEventListener('input',up); up();
+  });
+}
 function mobileView(){
   var doc=document.getElementById('doc'), old=document.getElementById('mdoc'); if(old) old.remove();
   document.body.classList.remove('mob');   /* letter layout must be visible while we measure it */
@@ -2800,16 +2929,16 @@ function mobileView(){
         [].forEach.call(c.querySelectorAll(':scope > .frame'),function(f,i){ var o=k.el.children[i]; f.style.aspectRatio=(o.offsetWidth/o.offsetHeight).toFixed(3); });
       }
       ['top','left','right','bottom','height','width','zIndex','position'].forEach(function(p){ c.style[p]=''; });
-      [].forEach.call(c.querySelectorAll('.h1'),function(h){ var pt=parseFloat(h.style.fontSize)||40; h.style.fontSize=Math.max(22,Math.min(44,pt*0.83))+'px'; h.style.whiteSpace='normal'; });
+      [].forEach.call(c.querySelectorAll('.h1'),function(h){ var pt=parseFloat(h.style.fontSize)||40; h.style.fontSize=(pt>=40?34:24)+'px'; h.style.whiteSpace='normal'; h.style.lineHeight='1.12'; });
       var to=(band&&k.top>=bt-2)?dark:light; to.appendChild(c);
     });
     sec.appendChild(light); if(dark.children.length) sec.appendChild(dark);
     m.appendChild(sec);
   });
   document.body.appendChild(m); document.body.classList.add('mob');
-  setupPlan(m); setupVideo(m);
+  setupPlan(m); setupSliders(m); setupLiveVideo(m,true); setupLiveAR(m);
 }
-var __mw=window.innerWidth; window.addEventListener('resize',function(){ if((__mw>820)!==(window.innerWidth>820)){ __mw=window.innerWidth; mobileView(); } });
+var __mw=window.innerWidth; window.addEventListener('resize',function(){ if((__mw>820)!==(window.innerWidth>820)){ __mw=window.innerWidth; if(window.innerWidth>820&&!document.querySelector('#doc wistia-player')){ setupLiveVideo(document.getElementById('doc'),false); setupLiveAR(document.getElementById('doc')); } mobileView(); } });
 
 /* ============================================================ render */
 function render(raw){
@@ -2920,7 +3049,9 @@ function render(raw){
     h+='<section data-k="also" class="page">'+hdr()+
      '<div class="wrap c" style="top:.95in"><div class="h1" style="font-size:44pt;white-space:nowrap">Also fits <em>your yard</em></div>'+
      '<p class="p" style="margin-top:.16in">'+(under?'Closer to your budget. Same timber. Same glass. A little smaller.':'Want something smaller? Same timber. Same glass. Less space.')+'</p></div>'+
-     '<div class="wrap frame" style="top:2.65in;height:2.9in"><div class="img" style="background:var(--ygh-green-mint) url(\''+N.render+'\') center/auto 88% no-repeat"></div><span class="tag">'+N.name+'</span></div>'+
+     '<div class="wrap frame arframe" style="top:2.65in;height:2.9in"><div class="img" style="background:var(--ygh-green-mint) url(\''+N.render+'\') center/auto 88% no-repeat"></div>'+
+       '<div class="arlive noprint" data-ar="'+M.next+'"></div>'+
+       '<span class="tag">'+N.name+'</span><button type="button" class="arbtn">'+icon('cube')+'See it in my yard</button></div>'+
      '<div class="wrap" style="top:5.95in">'+specTable(N,N.name+' <em class="vs">vs '+M.sqft+' sq ft</em>')+'</div>'+
      ftr(false)+'</section>';
   }
@@ -2944,23 +3075,29 @@ function render(raw){
   var EX=null; if(!d.hasYard){ var ey=CONFIG.exampleYards||{}, pick=ey[mid];
     if(!(pick&&pick.before&&pick.after)) for(var kk in ey){ if(ey[kk].before&&ey[kk].after){ pick=ey[kk]; break; } }
     if(pick&&pick.before&&pick.after) EX=pick; }
-  var Y=d.hasYard?{before:d.images.yardBefore,after:d.images.yardAfter}:EX;
-  if(Y) h+='<section data-k="yard" class="page dark-foot">'+hdr()+
+  var YS=d.hasYard?d.yards:(EX?[EX]:[]);
+  YS.forEach(function(Y,yi){ var many=YS.length>1;
+  h+='<section data-k="yard" class="page dark-foot">'+hdr()+
      '<div class="wrap c" style="top:.95in"><div class="h1" style="font-size:62pt">'+(d.hasYard?'Your Yard':'The Yard')+'</div></div>'+
-     '<div class="band" style="top:4.6in"></div>'+
-     '<div class="wrap" style="top:2.15in;height:3.2in;z-index:2">'+
-       '<div class="frame" style="left:0;width:49%;height:100%">'+pic(Y&&Y.before,'')+'<span class="tag">Before</span></div>'+
-       '<div class="frame" style="right:0;width:49%;height:100%">'+pic(Y&&Y.after,'')+'<span class="tag g">After</span></div></div>'+
+     '<div class="band" style="top:5.1in"></div>'+
+     '<div class="wrap frame ba" style="top:2.05in;height:4.1in;z-index:2">'+
+       '<div class="ba__layer ba__after"><img alt="Your yard with your Nordwood" src="'+esc(Y.after)+'"></div>'+
+       '<div class="ba__layer ba__before"><img alt="Your yard before" src="'+esc(Y.before)+'"></div>'+
+       '<span class="tag ba__tag--l">Before</span><span class="tag g ba__tag--r">After</span>'+
+       (many?'<span class="ba__count">'+(yi+1)+' of '+YS.length+'</span>':'')+
+       '<span class="ba__line"></span><span class="ba__knob"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+       '<input class="noprint" type="range" min="0" max="100" value="50" aria-label="Drag to compare before and after"></div>'+
      (d.hasYard?
-     '<div class="wrap c" style="top:5.85in"><div class="h1" style="font-size:25pt;line-height:1.25;color:#fff">Same yard.<br>Now with your <em>Nordwood</em></div></div>'
-     :'<div class="wrap c" style="top:5.75in"><div class="h1" style="font-size:25pt;line-height:1.25;color:#fff">Same yard.<br>Now with a <em>Nordwood</em></div>'+
-      '<p class="p" style="margin-top:.12in;color:rgba(255,255,255,.82)">Send us a photo of yours, and we\u2019ll do the same for you.</p></div>')+
-     '<div class="wrap icons" style="top:7.55in">'+
+     '<div class="wrap c" style="top:6.5in"><div class="h1" style="font-size:25pt;line-height:1.25;color:#fff">Same yard.<br>Now with your <em>Nordwood</em></div></div>'
+     :'<div class="wrap c" style="top:6.45in"><div class="h1" style="font-size:25pt;line-height:1.25;color:#fff">Same yard.<br>Now with a <em>Nordwood</em></div>'+
+      '<p class="p" style="margin-top:.12in;color:rgba(255,255,255,.82)">Send us a photo of yours, and we’ll do the same for you.</p></div>')+
+     '<div class="wrap icons" style="top:7.95in">'+
        '<div>'+icon('home')+'<div class="t">Your model</div><div class="s">'+M.name+'</div></div>'+
        '<div>'+icon('ruler')+'<div class="t">Floor space</div><div class="s">'+M.sqft+' sq ft</div></div>'+
        '<div>'+icon(P.icon)+'<div class="t">Built for</div><div class="s">'+P.short+'</div></div>'+
        '<div>'+icon('truck')+'<div class="t">Delivery</div><div class="s">'+CONFIG.weeks[0]+' to '+CONFIG.weeks[1]+' weeks</div></div>'+
      '</div>'+ftr(true)+'</section>';
+  });
 
   /* 5. WHERE IT GOES: interactive, true-scale site plan */
   var isDemo=d.id==='demo'||!d.id;
@@ -2990,9 +3127,10 @@ function render(raw){
      '<div class="wrap c" style="top:.95in"><div class="h1" style="font-size:58pt">Walk <em>inside</em> it</div>'+
      '<p class="p" style="margin-top:.16in">Tap below. Your '+M.short+' shows up in your yard, full size.</p></div>'+
      '<div class="band" style="top:4.85in"></div>'+
-     '<a href="'+esc(arUrl)+'" class="wrap frame" style="top:2.4in;height:3.45in;z-index:2;display:block">'+
+     '<div class="wrap frame arframe" style="top:2.4in;height:3.45in;z-index:2">'+
        '<div class="img" style="background:var(--ygh-green-mint) url(\''+M.render+'\') center 38%/auto 72% no-repeat"></div>'+
-       '<span class="arbtn">'+icon('cube')+'See it in my yard</span></a>'+
+       '<div class="arlive noprint" data-ar="'+mid+'"></div>'+
+       '<button type="button" class="arbtn">'+icon('cube')+'See it in my yard</button></div>'+
      '<div class="wrap c" style="top:6.35in"><div class="h1" style="font-size:30pt"><em>Instantly</em></div></div>'+
      '<div class="wrap icons" style="top:7.25in">'+
        '<div>'+icon('home')+'<div class="t">Step out</div><div class="s">Stand at your back door</div></div>'+
@@ -3013,8 +3151,8 @@ function render(raw){
   var ev=[
     ['This week','Design call','Go over this design with '+esc(E.name)+'. Lock your model and spot.'],
     ['Weeks 1 to 2','Order on its way','Order prepared and shipped to you.'],
-    ['Weeks 2 to '+(CONFIG.weeks[0]-1),'Ground prep','Pour your base. Clear a path for the truck. See page <span data-pref="foundation"></span>.'],
-    ['Weeks '+CONFIG.weeks[0]+' to '+CONFIG.weeks[1],'Delivery','It arrives precision cut, with the full manual. See page <span data-pref="delivery"></span>.'],
+    ['Weeks 2 to '+(CONFIG.weeks[0]-1),'Ground prep','Pour your base. Clear a path for the truck.'],
+    ['Weeks '+CONFIG.weeks[0]+' to '+CONFIG.weeks[1],'Delivery','It arrives precision cut, with the full manual.'],
     ['The weekend after','Build day','Two people put it up. Most owners hire a local contractor.'],
     ['','First morning','Coffee in hand. Door open. Sun through the glass.']];
   var tl=''; ev.forEach(function(e){ tl+='<div class="ev"><div class="ck"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></svg></div><div><div class="lab">'+e[1]+'<i>'+e[0]+'</i></div><p>'+e[2]+'</p></div></div>'; });
@@ -3028,9 +3166,10 @@ function render(raw){
      '<div class="wrap c" style="top:.95in"><div class="h1" style="font-size:58pt">Watch <em>this</em></div>'+
      '<p class="p" style="margin-top:.16in">Get to know your Nordwood.</p></div>'+
      '<div class="band" style="top:5.05in"></div>'+
-     '<a href="'+CONFIG.vsl.url+'" data-video="'+CONFIG.vsl.url+'" class="wrap frame" style="top:2.4in;height:3.4in;display:block;z-index:2;background:#0d1a12">'+
+     '<a href="'+CONFIG.vsl.url+'" data-video="'+CONFIG.vsl.url+'" class="wrap frame vframe" style="top:2.4in;height:3.4in;display:block;z-index:2;background:#0d1a12">'+
        '<div class="img" style="background-image:url(\''+CONFIG.vsl.poster+'\')"></div><span class="play"><svg viewBox="0 0 24 24"><path d="M6 4.5v15a1 1 0 001.5.86l12.3-7.5a1 1 0 000-1.72L7.5 3.64A1 1 0 006 4.5z"/></svg></span>'+
        '<span class="tag g" style="top:auto;bottom:12px">Tap to play</span>'+
+       '<div class="wlive noprint" data-wistia></div>'+
        '</a>'+
      '<div class="wrap c" style="top:6.1in"><div class="h1" style="font-size:25pt;line-height:1.3;color:#fff">Custom-build quality.<br><em>Without the custom bill.</em></div>'+
      '<p class="p" style="margin-top:.14in;color:rgba(255,255,255,.82)">A custom glass house is built by hand on your lawn. You pay for every hour.<br>Your Nordwood is precision cut in our factory. You pay for the greenhouse.</p></div>'+
@@ -3062,13 +3201,11 @@ function render(raw){
   var doc=document.getElementById('doc'); doc.innerHTML=h;
   /* reading order: feeling first, facts second, options last, then the ask */
   ['cover','match','design','yard','where','walk','built','specs','foundation','delivery','watch','also','roadmap','cta'].forEach(function(k){
-    var el=doc.querySelector('[data-k="'+k+'"]'); if(el) doc.appendChild(el); });
+    [].forEach.call(doc.querySelectorAll('[data-k="'+k+'"]'),function(el){ doc.appendChild(el); }); });
   [].forEach.call(doc.querySelectorAll('.ftr > span:last-child'),function(n,i){ n.textContent=i+2; });
   var order=[].map.call(doc.querySelectorAll('section.page'),function(p){return p.getAttribute('data-k');});
   [].forEach.call(doc.querySelectorAll('[data-pref]'),function(n){ n.textContent=order.indexOf(n.getAttribute('data-pref'))+1; });
-  var oldDl=document.querySelector('.dl'); if(oldDl) oldDl.remove();
-  if(!ERRORS.length) document.body.insertAdjacentHTML('beforeend','<button class="dl noprint" type="button" onclick="window.print()">'+icon('book')+'Download PDF</button>');
-  setupPlan(doc); setupVideo(doc); mobileView();
+  setupPlan(doc); setupSliders(doc); if(window.innerWidth>820){ setupLiveVideo(doc,false); setupLiveAR(doc); } mobileView();
   document.title=(d.firstName?esc(d.firstName)+', ':'')+'Nordwood Backyard Design';
 }
 loadRecord().then(function(r){
