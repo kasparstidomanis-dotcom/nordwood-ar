@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Verify and send</title>
+<style>
+  :root{--g:#0b5d34;--g2:#159d59;--amber:#e0a038;--ink:#17241b;--mut:#66756b;--line:#dbe4dc;--bg:#f3f6f3;--card:#fff;--tint:#eaf7ee;--red:#b4432f}
+  *{box-sizing:border-box} body{margin:0;font:14px/1.45 "Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--g);color:#fff;padding:10px 16px}
+  header h1{font-size:16px;margin:0} header .sp{flex:1} header a{color:#cfeedd}
+  .pill{background:rgba(255,255,255,.14);border-radius:999px;padding:3px 10px;font-size:13px}
+  button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;background:#e3f1e8;color:var(--g)}
+  button.primary{background:var(--amber);color:#1b1404} button:disabled{opacity:.45;cursor:default} button.danger{background:#f6e3df;color:var(--red)}
+  main{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:14px;padding:14px;max-width:1700px;margin:0 auto}
+  @media(max-width:1100px){main{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px}
+  .card h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--g2);margin:0 0 8px}
+  .vers{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+  .v{position:relative;border:3px solid transparent;border-radius:10px;overflow:hidden;cursor:pointer;background:#e8ece8;aspect-ratio:4/3}
+  .v img{width:100%;height:100%;object-fit:cover;display:block} .v.on{border-color:var(--g2)} .v .tag{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:2px 8px;border-radius:999px}
+  .v.on .tag{background:var(--g2)} .v.orig .tag{background:#555} .v.wait{display:grid;place-items:center;color:var(--mut);font-weight:600}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 0}
+  label{font-weight:600;font-size:12.5px} select,input[type=text],textarea{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:7px;width:100%} textarea{min-height:70px}
+  .mock{position:sticky;top:12px}
+  .phone{width:390px;max-width:100%;height:760px;border:10px solid #1b231e;border-radius:34px;overflow:hidden;background:#000;margin:0 auto}
+  .phone iframe{width:100%;height:100%;border:0;background:#fff}
+  .ok{background:var(--tint);border:1px solid #9fd6b1;padding:8px 12px;border-radius:8px}
+  .err{color:var(--red)} .mut{color:var(--mut)} .small{font-size:12.5px}
+  .planimg{width:100%;max-width:420px;border-radius:10px;display:block;background:#e8ece8;aspect-ratio:1}
+</style></head><body>
+<header><h1>Verify &amp; send</h1><span class="pill" id="who"></span><span class="pill" id="st"></span><div class="sp"></div><a id="backLink" href="#">All requests</a></header>
+<main>
+  <section>
+    <div class="card"><h2>Pick the best version of each photo</h2><p class="mut small" style="margin:0 0 8px">Click a version to choose it. The chosen one goes on the customer's page; the original photo becomes the "before". Framing is set automatically for phone screens (tall photos are trimmed to 4:5); change it per photo if the greenhouse gets cut.</p><div id="photos"></div></div>
+    <div class="card"><h2>Site plan</h2><div class="row" style="margin:0 0 8px"><img class="planimg" id="planImg" alt=""><div style="flex:1;min-width:200px"><p class="mut small" id="planNote">Drawn from the satellite map. Check that the houses, pool and trees sit where they are on the satellite (the builder shows both). On the customer's page they can drag the greenhouse around this plan at true scale.</p><button id="redrawPlan">Redraw the plan</button> <span class="mut small" id="planGen"></span></div></div></div>
+    <div class="card"><h2>Expert note</h2>
+      <div class="row" style="margin:0"><div style="flex:1;min-width:180px"><label>Expert name<input type="text" id="expert"></label></div></div>
+      <label style="display:block;margin-top:8px">Note to the customer<textarea id="note"></textarea></label>
+      <p class="mut small" style="margin:6px 0 0">Short and personal. Mention their yard, the spot you'd pick and why.</p></div>
+    <div class="card"><div class="row" style="margin:0"><button id="previewBtn">Update the preview</button><button class="primary" id="approveBtn" disabled>Approve &amp; send to the customer</button><span id="msg" class="small"></span></div>
+      <p class="mut small" style="margin:8px 0 0">Send = the customer gets the "your review is ready" email (Klaviyo) with their link, and HubSpot gets a note. You can reopen and change it afterwards; the link stays the same.</p></div>
+  </section>
+  <aside><div class="mock card"><h2>How the customer sees it (phone)</h2><div class="phone"><iframe id="frame" title="Customer page preview"></iframe></div><p class="mut small" id="linkLine" style="margin:8px 0 0"></p></div></aside>
+</main>
+<script>
+const B = window.__BACKYARD__; const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const api = (path, opt) => fetch(`${B.base}/${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(B.key)}`, opt);
+$('who').textContent = `${B.name} · ${B.models[B.product] || B.product}`; $('backLink').href = B.listUrl; $('expert').value = B.expert || 'Kaspar';
+let PKG = null, GEN = { jobs: [] }, pick = {}, frame = {}, focus = {}, RES = null, planReady = false;
+async function load() {
+  if (!PKG) { const r = await api('package'); if (r.ok) PKG = await r.json(); }
+  const g = await (await api('gen')).json(); GEN = g; planReady = g.planart;
+  $('st').textContent = g.status === 'generating' ? 'generating images…' : g.status;
+  render();
+  if (g.jobs.some((j) => j.status === 'pending' || j.status === 'running') || g.gen_pending) setTimeout(load, 8000);
+}
+function autoFrame(w, h) { return h / w > 1.25 ? '4:5' : h / w > 0.95 ? '1:1' : 'natural'; }
+function render() {
+  if (!PKG) { $('photos').innerHTML = '<p class="mut">No package yet: the greenhouse has not been placed in the photos. Open the builder first.</p>'; return; }
+  const placed = PKG.photos.filter((p) => p.status === 'done' && p.composite);
+  if (!$('note').value) $('note').value = (PKG.notes && (PKG.notes.A || PKG.notes.closing)) ? [PKG.notes.A, PKG.notes.closing].filter(Boolean).join(' ') : '';
+  $('photos').innerHTML = placed.map((p) => {
+    const jobs = GEN.jobs.filter((j) => j.kind === 'photo' && j.photo === p.index);
+    if (!(p.index in frame)) frame[p.index] = autoFrame(p.w, p.h);
+    if (!(p.index in focus)) focus[p.index] = p.focusY != null ? p.focusY : 0.55;
+    const vers = jobs.map((j) => j.status === 'done' ? `<div class="v ${pick[p.index] === j.k ? 'on' : ''}" data-p="${p.index}" data-k="${j.k}"><img src="${B.base}/gi/${j.k}?key=${encodeURIComponent(B.key)}" alt=""><span class="tag">${pick[p.index] === j.k ? 'Chosen' : 'Version ' + j.v}</span></div>`
+      : `<div class="v wait"><span class="tag">Version ${j.v}</span>${j.status === 'error' ? '<span class="err">Failed: ' + esc(j.err) + '</span>' : (j.status === 'running' ? 'Generating… (30 s)' : 'Waiting…')}</div>`).join('');
+    return `<div style="margin:0 0 16px"><div class="row" style="margin:0 0 6px"><b>Photo ${p.index + 1}</b><span class="mut small">${p.w && p.h ? p.w + ' × ' + p.h : ''}</span><span class="sp" style="flex:1"></span>
+      <label class="small">Frame <select data-frame="${p.index}"><option value="natural"${frame[p.index] === 'natural' ? ' selected' : ''}>As taken</option><option value="4:5"${frame[p.index] === '4:5' ? ' selected' : ''}>Tall 4:5</option><option value="1:1"${frame[p.index] === '1:1' ? ' selected' : ''}>Square</option><option value="4:3"${frame[p.index] === '4:3' ? ' selected' : ''}>4:3</option></select></label>
+      <label class="small">Focus <input type="range" data-focus="${p.index}" min="0" max="1" step="0.02" value="${focus[p.index]}" style="width:110px"></label>
+      <button data-regen="${p.index}" class="small">3 more versions</button></div>
+      <div class="vers"><div class="v orig"><img src="${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}" alt=""><span class="tag">Original (before)</span></div>${vers}</div></div>`;
+  }).join('') || '<p class="mut">No placed photos in the package.</p>';
+  $('photos').querySelectorAll('.v[data-k]').forEach((el) => el.onclick = () => { pick[el.dataset.p] = el.dataset.k; render(); });
+  $('photos').querySelectorAll('[data-frame]').forEach((el) => el.onchange = () => { frame[el.dataset.frame] = el.value; });
+  $('photos').querySelectorAll('[data-focus]').forEach((el) => el.oninput = () => { focus[el.dataset.focus] = +el.value; });
+  $('photos').querySelectorAll('[data-regen]').forEach((el) => el.onclick = async () => { el.disabled = true; await api('regen', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photo: +el.dataset.regen }) }); setTimeout(load, 1500); });
+  // auto-pick the first finished version so the preview works straight away
+  for (const p of placed) if (!pick[p.index]) { const j = GEN.jobs.find((x) => x.kind === 'photo' && x.photo === p.index && x.status === 'done'); if (j) pick[p.index] = j.k; }
+  const planJob = GEN.jobs.find((j) => j.kind === 'plan');
+  $('planImg').src = planReady ? `${B.planArtUrl}&t=${Date.now()}` : ''; $('planImg').style.display = planReady ? 'block' : 'none';
+  $('planGen').textContent = planReady ? '' : planJob ? (planJob.status === 'error' ? 'Plan failed: ' + planJob.err : 'Drawing the plan… about 30 s') : 'No plan yet. Press Redraw.';
+  const allPicked = placed.length && placed.every((p) => pick[p.index]);
+  $('approveBtn').disabled = !allPicked;
+}
+$('redrawPlan').onclick = async () => { $('redrawPlan').disabled = true; await api('regen', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photo: 'plan' }) }); planReady = false; setTimeout(() => { $('redrawPlan').disabled = false; load(); }, 1500); };
+function resultObject(draft) {
+  const placed = PKG.photos.filter((p) => p.status === 'done' && p.composite && pick[p.index]);
+  return { v: 2, product: PKG.product, expert: $('expert').value.trim(), note: $('note').value.trim(),
+    photos: placed.map((p, n) => ({ n, index: p.index, w: p.w, h: p.h, frame: frame[p.index], focusY: focus[p.index],
+      src: draft ? `${B.base}/gi/${pick[p.index]}?key=${encodeURIComponent(B.key)}` : `final-${n}.jpg`, before: draft ? `${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}` : `before-${p.index}.jpg` })),
+    plan: { zoom: 19, spot: PKG.plan && PKG.plan.spots && PKG.plan.spots.A ? PKG.plan.spots.A : null, lat: PKG.plan && PKG.plan.lat, lng: PKG.plan && PKG.plan.lng, hasArt: planReady } };
+}
+$('previewBtn').onclick = async () => {
+  if (!PKG) return; $('msg').textContent = 'Updating…';
+  const r = await api('draft', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(resultObject(true)) });
+  $('msg').textContent = r.ok ? '' : 'Preview failed';
+  $('frame').src = `/r/${B.token}?draft=1&key=${encodeURIComponent(B.key)}&t=${Date.now()}`;
+};
+// paste the chosen AI version back into the original photo through the greenhouse mask, so everything outside the greenhouse is the real photo
+async function loadImg(src) { const im = new Image(); im.crossOrigin = 'anonymous'; await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = src; }); return im; }
+async function finalJpeg(p) {
+  const orig = await loadImg(`${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}`), gen = await loadImg(`${B.base}/gi/${pick[p.index]}?key=${encodeURIComponent(B.key)}`), mask = await loadImg(p.mask);
+  const k = Math.min(1, 1600 / Math.max(orig.naturalWidth, orig.naturalHeight)), W = Math.round(orig.naturalWidth * k), H = Math.round(orig.naturalHeight * k);
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  // the AI output (chosen aspect) is cover-fitted onto the photo's frame
+  const s = Math.max(W / gen.naturalWidth, H / gen.naturalHeight), gw = gen.naturalWidth * s, gh = gen.naturalHeight * s;
+  const m = document.createElement('canvas'); m.width = W; m.height = H; const mx = m.getContext('2d'); mx.filter = 'blur(6px)'; mx.drawImage(mask, 0, 0, W, H);
+  const layer = document.createElement('canvas'); layer.width = W; layer.height = H; const lx = layer.getContext('2d');
+  lx.drawImage(gen, (W - gw) / 2, (H - gh) / 2, gw, gh); lx.globalCompositeOperation = 'destination-in'; lx.drawImage(m, 0, 0);
+  x.drawImage(orig, 0, 0, W, H); x.drawImage(layer, 0, 0);
+  return new Promise((res) => c.toBlob(res, 'image/jpeg', 0.9));
+}
+$('approveBtn').onclick = async () => {
+  if (!confirm('Send this review to the customer now?')) return;
+  $('approveBtn').disabled = true; $('msg').textContent = 'Preparing the final images…';
+  try {
+    const res = resultObject(false), fd = new FormData(); fd.append('result', JSON.stringify(res));
+    for (const p of res.photos) fd.append('file', await finalJpeg(PKG.photos.find((q) => q.index === p.index)), `final-${p.n}.jpg`);
+    $('msg').textContent = 'Sending…';
+    const r = await api('approve', { method: 'POST', body: fd }); const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+    $('msg').innerHTML = `<span class="ok">Sent. Customer link: <a href="${esc(j.link)}" target="_blank">${esc(j.link)}</a></span>${j.warn ? ' <span class="err">' + esc(j.warn) + '</span>' : ''}`;
+    $('frame').src = j.link + '?t=' + Date.now(); $('st').textContent = 'sent';
+  } catch (e) { $('msg').innerHTML = '<span class="err">Could not send: ' + esc(e.message) + '</span>'; $('approveBtn').disabled = false; }
+};
+load();
+</script></body></html>
