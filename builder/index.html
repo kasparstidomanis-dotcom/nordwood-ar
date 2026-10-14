@@ -58,6 +58,7 @@
   .local{display:grid;gap:8px} .local input{padding:8px;border:1px solid var(--line);border-radius:7px;font:inherit;width:100%}
   kbd{font:12px ui-monospace,monospace;background:#eef2ee;border:1px solid var(--line);border-radius:4px;padding:0 4px}
   #submitBtn.done{opacity:1;background:#1f8f55;color:#fff;border-color:#1f8f55;cursor:default}
+  .acts{position:absolute;right:10px;top:10px;z-index:6;display:flex;gap:6px} .acts button{box-shadow:0 2px 8px rgba(0,0,0,.35)} .acts #pSkip{background:#fff;color:var(--ink)}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
 </head><body>
@@ -86,6 +87,7 @@
       <div class="stage"><div class="photoWrap" id="photoWrap"><img class="bg" id="photoImg" alt=""><canvas id="threeCv"></canvas>
         <button class="rotBtn" id="pRot" title="Drag around the greenhouse to turn it (2° steps), click for 15°" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 3v5h-5"/></svg><span class="deg" id="pRotDeg"></span></button>
         <div class="hz" id="hz"><span class="hzGrip" id="hzGrip">Eye level ↕</span></div>
+        <div class="acts"><button id="pSkip" title="Leave this photo out of the AI run">Skip photo</button><button id="pDone" class="on">Looks right ✓</button></div>
         <div class="busy" id="photoBusy" hidden></div><div class="hint" id="photoHint"></div></div></div>
       <div class="toolbar">
         <div class="grp"><label>Rotate <input type="range" id="pRotRange" min="0" max="359" step="1" value="0" style="width:140px;vertical-align:middle"></label><button id="pRot90">Turn 90°</button><button id="pMirror">Doors other side</button></div>
@@ -93,9 +95,8 @@
         <label>Lens <select id="pLens"><option value="63">Phone (1x)</option><option value="100">Phone wide (0.5x)</option><option value="42">Phone zoom (2x)</option><option value="75">Wide camera</option></select></label>
         <label>Taken from <select id="pHeight"><option value="1.6">Standing on the ground</option><option value="3">Deck or porch</option><option value="5">Upstairs window</option></select></label>
         <label>Sun <input type="range" id="pSun" min="0" max="359" value="220" style="width:110px"></label>
-        <div class="grp"><button id="pSkip">Skip photo</button><button id="pDone" class="on">Looks right ✓</button></div>
       </div>
-      <p class="note">Drag the greenhouse to move it on the ground; click anywhere on the lawn to jump it there. Round arrows: click = 15°, drag sideways = free turn (2° steps). If it looks too big or too small, drag the yellow <b>Eye level</b> line until the grid lies flat on the lawn. Size is always the real size.</p>
+      <p class="note">Drag the greenhouse to move it on the ground; click anywhere on the lawn to jump it there. Turn it with the round handle under it (drag around = 2° steps, click = 15°), the Rotate slider or the mouse wheel. If it looks too big or too small, drag the yellow <b>Eye level</b> line until the grid lies flat on the lawn. Size is always the real size.</p>
     </div>
   </section>
   <aside>
