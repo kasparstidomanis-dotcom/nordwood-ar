@@ -35,7 +35,7 @@
 @media (max-width:749px){:root{--hero-h1:36px}}
 
 *,*::before,*::after{box-sizing:border-box}
-body{margin:0;padding-top:40px;font-family:var(--ygh-font-body);color:var(--ygh-grey);background:var(--ygh-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{margin:0;font-family:var(--ygh-font-body);color:var(--ygh-grey);background:var(--ygh-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body.locked{overflow:hidden}
 img{max-width:100%;display:block}
 .container{max-width:1200px;margin:0 auto;padding:0 40px}
@@ -178,6 +178,10 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
 /* done-step hero, same type as the main hero */
 .step .done__h{margin:4px 0 12px;font-family:var(--ygh-font-heading);font-weight:400;text-transform:uppercase;font-size:40px;line-height:var(--ygh-heading-lh);letter-spacing:var(--ygh-heading-ls);color:var(--ygh-green-text);text-wrap:balance}
 .done__h em{display:inline;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:var(--ygh-radius-highlight);font-family:var(--ygh-font-highlight);font-style:normal;font-weight:800;background:var(--ygh-green);color:#fff;padding:.02em .24em;letter-spacing:.02em;white-space:nowrap}
+.dnote{margin:-6px 0 20px;padding:12px 14px;border-radius:var(--ygh-radius-card);background:var(--ygh-green-mint);border:1px solid #cfe8d2;color:var(--ygh-green-dark);font:500 15px/1.45 var(--ygh-font-body);text-align:left}
+.dnote:empty{display:none}
+.mcap__match{display:inline-block;margin:0 0 6px;padding:4px 9px;border-radius:3px;background:var(--ygh-green);color:#fff;font:800 11px/1 var(--ygh-font-highlight);letter-spacing:1.3px;text-transform:uppercase}
+.mcap__match[hidden]{display:none}
 .done .done__sub{margin:0 0 20px;font:500 17px/1.4 var(--ygh-font-body);color:var(--ygh-grey)}
 .how{list-style:none;counter-reset:how;margin:22px 0 0;padding:0;display:grid;gap:12px;text-align:left}
 .how li{counter-increment:how;position:relative;padding:4px 0 4px 42px;font:400 15px/1.45 var(--ygh-font-body);color:var(--ygh-grey)}
@@ -249,7 +253,6 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   <symbol id="lr" viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
-<div class="proto"><b>Prototype</b> · Nordwood Backyard Design · not the live page</div>
 
 <section class="hero">
   <div class="container hero__in">
@@ -476,12 +479,13 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
     <div class="step done" data-step="9">
       <h2 class="done__h">Your Nordwood<br>is ready.<br><em>See it in your yard</em></h2>
       <p class="done__sub">Full size, right now, on your phone.</p>
+      <p class="dnote" id="dNote"></p>
       <div class="arv" id="arv">
         <model-viewer id="mv" alt="The Nordwood greenhouse, at real size"
           ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor"
           camera-controls touch-action="pan-y" auto-rotate rotation-per-second="14deg" interaction-prompt="none"
           camera-orbit="35deg 72deg auto" max-camera-orbit="auto 88deg auto"
-          shadow-intensity="1" shadow-softness="0.8" exposure="1.05" tone-mapping="neutral" environment-image="neutral">
+          shadow-intensity="1" shadow-softness="0.8" exposure="1.05" tone-mapping="neutral" environment-image="nordwood-sky.hdr">
           <span slot="ar-button" hidden></span>
         </model-viewer>
         <button type="button" class="mnav mnav--prev" id="mPrev" aria-label="Previous model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -489,6 +493,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
         <p class="arv__hint" id="arHint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a5.5 5.5 0 0 1-5.5 5.5h-1.2a5 5 0 0 1-3.9-1.9L5 15.5a1.5 1.5 0 0 1 2.3-1.9L9 15.5"/></svg><span>Tap the Nordwood to place it</span></p>
       </div>
       <div class="mcap" aria-live="polite">
+        <span class="mcap__match" id="mMatch" hidden>Your match</span>
         <p class="mcap__name" id="mName">Nordwood Greenhouse</p>
         <p class="mcap__size" id="mSize">&nbsp;</p>
         <div class="mdots" id="mDots"></div>
@@ -596,8 +601,42 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   sp.addEventListener('click', function () { photosLater = false; show(8); });
   document.getElementById('later').addEventListener('click', function () { photosLater = true; show(8); });
 
+  // the matched model (kept in step with design.html)
+  var PRICE = { greenhouse: 13668, classic: 11462, arrow: 8995, arrowMini: 7440 };
+  var NEXT = { greenhouse: 'classic', classic: 'arrow', arrow: 'arrowMini', arrowMini: null };
+  var BUDGET_MAX = { 'Under $10,000': 10000, '$10,000 to $15,000': 15000, '$15,000 to $20,000': 20000, '$20,000+': null };
+  function matchModel(a) {
+    var m = a.space === 'A smaller or narrow spot' ? 'arrow' : (a.purpose === 'A place to grow plants all year' ? 'classic' : 'greenhouse');
+    var max = BUDGET_MAX[a.budget];
+    while (max && PRICE[m] > max && NEXT[m]) m = NEXT[m];
+    return m;
+  }
+
+  // everything the lead gave us, in one place for the HubSpot form (see design-record-spec.md for the field names)
+  function payload() {
+    return {
+      firstName: document.getElementById('fName').value.trim(),
+      phone: document.getElementById('fPhone').value.trim(),
+      email: document.getElementById('fEmail').value.trim(),
+      address: document.getElementById('fAddr').value.trim(),
+      zip: document.getElementById('fZip').value.trim(),
+      purpose: answers.purpose, space: answers.space, timing: answers.timing, budget: answers.budget,
+      hasPhotos: !photosLater && fp.files.length > 0,
+      note: document.getElementById('fNote').value.trim()
+    };
+  }
+  // hook for the live form: set window.YGH_SUBMIT = function (data, files) { ... } to send to HubSpot / your dev's service
+  function send() {
+    var d = payload();
+    try { if (typeof window.YGH_SUBMIT === 'function') window.YGH_SUBMIT(d, photosLater ? [] : [].slice.call(fp.files)); } catch (e) { console.error(e); }
+    document.getElementById('dNote').innerHTML = d.hasPhotos
+      ? '<b>Your yard design is next.</b> We\u2019re placing your Nordwood in your photos now. We\u2019ll text you the link within 24 hours.'
+      : '<b>Your design is on its way to your phone.</b> Reply to our text with a photo of your yard, and we\u2019ll put your Nordwood in it.';
+  }
+
   // submit
   document.getElementById('submit').addEventListener('click', function () {
+    send();
     show(9);
     var mv = document.getElementById('mv');
     if (!mv.src) {
@@ -618,15 +657,18 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       });
       document.getElementById('arGo').addEventListener('click', function () { if (mv.canActivateAR) mv.activateAR(); });
       // official floor area per model, in sq ft. Fill these in from the spec sheet; a model left at null shows no size line.
-      var SQFT = { greenhouse: 206, arrow: 148, classic: 88, heritage: 174 };
+      var SQFT = { greenhouse: 206, classic: 148, arrow: 88, arrowMini: 58, heritage: 174 };
       var MODELS = {
-        greenhouse: { src: 'nordwood-greenhouse.glb', ios: 'nordwood-greenhouse.usdz', name: 'Nordwood Greenhouse' },
+        greenhouse: { src: 'nordwood-tshape.glb',     ios: 'nordwood-tshape.usdz',     name: 'Nordwood Greenhouse' },
         arrow:      { src: 'nordwood-arrow.glb',      ios: 'nordwood-arrow.usdz',      name: 'Nordwood Arrow' },
         classic:    { src: 'nordwood-classic.glb',    ios: 'nordwood-classic.usdz',    name: 'Nordwood Classic' },
+        arrowMini:  { src: 'nordwood-arrow-mini.glb', ios: 'nordwood-arrow-mini.usdz', name: 'Nordwood Arrow Mini' },
         heritage:   { src: 'nordwood.glb',            ios: null,                       name: 'Heritage Nord' }
       };
       var ftin = function (m) { var t = Math.round(m / 0.0254); return Math.floor(t / 12) + '\u2032 ' + (t % 12) + '\u2033'; };
-      var ORDER = ['greenhouse', 'arrow', 'classic', 'heritage'], cur = 0;
+      // same rule as the design page: small spot = Arrow, growing = Classic, else Greenhouse; then step down to fit the budget
+      var MATCH = matchModel(answers);
+      var ORDER = [MATCH].concat(['greenhouse', 'classic', 'arrow', 'arrowMini', 'heritage'].filter(function (x) { return x !== MATCH; })), cur = 0;
       var size = document.getElementById('mSize'), nameEl = document.getElementById('mName'), dots = document.getElementById('mDots');
       ORDER.forEach(function (id, i) {
         var d = document.createElement('button'); d.type = 'button'; d.setAttribute('aria-label', MODELS[id].name);
@@ -637,11 +679,12 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
         cur = (i + ORDER.length) % ORDER.length;
         var id = ORDER[cur], m = MODELS[id];
         nameEl.textContent = m.name;
+        document.getElementById('mMatch').hidden = (id !== MATCH);
         [].forEach.call(dots.children, function (d, k) { d.setAttribute('aria-current', k === cur); });
         size.innerHTML = SQFT[id] ? SQFT[id] + ' sq ft' : '&nbsp;';
         if (m.ios) mv.setAttribute('ios-src', m.ios); else mv.removeAttribute('ios-src');
         mv.alt = 'The ' + m.name + ', at real size';
-        mv.src = m.src;
+        mv.setAttribute('src', m.src);
       }
       // arrows sit on top of the viewer: stop the tap reaching it, so it doesn't open AR
       ['mPrev', 'mNext'].forEach(function (bid, k) {
