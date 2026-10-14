@@ -771,7 +771,7 @@ window.YGH_SUBMIT = function (d, files) {
       var ftin = function (m) { var t = Math.round(m / 0.0254); return Math.floor(t / 12) + '\u2032 ' + (t % 12) + '\u2033'; };
       // same rule as the design page: small spot = Arrow, growing = Classic, else Greenhouse; then step down to fit the budget
       var MATCH = matchModel(answers); window.YGH_MATCH = MATCH; if (window.YGH_OOB) window.YGH_OOB(MATCH);
-      var ORDER = [MATCH].concat(['greenhouse', 'classic', 'arrow', 'arrowMini', 'heritage'].filter(function (x) { return x !== MATCH; })), cur = 0;
+      var ORDER = [MATCH].concat(['greenhouse', 'classic', 'arrow', 'arrowMini'].filter(function (x) { return x !== MATCH; })), cur = 0;
       var size = document.getElementById('mSize'), nameEl = document.getElementById('mName'), dots = document.getElementById('mDots');
       ORDER.forEach(function (id, i) {
         var d = document.createElement('button'); d.type = 'button'; d.setAttribute('aria-label', MODELS[id].name);
