@@ -59,6 +59,17 @@ a{color:inherit;text-decoration:none}
 .rel{position:relative!important}
 .tag{position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:3px;background:rgba(0,46,23,.9);color:#fff;font:800 9pt/1 var(--ygh-font-highlight);letter-spacing:.14em;text-transform:uppercase;z-index:2}
 .tag.g{background:var(--ygh-green)}
+.ba{--pos:50%;user-select:none;-webkit-user-select:none;touch-action:pan-y}
+.ba__layer{position:absolute;inset:0}
+.ba__layer img{display:block;width:100%;height:100%;object-fit:cover}
+.ba__before{clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
+.ba .tag{z-index:3;transition:opacity .15s linear;pointer-events:none}
+.ba .ba__tag--r{left:auto;right:12px}
+.ba__line{position:absolute;top:0;bottom:0;left:var(--pos);z-index:2;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 0 1px rgba(0,46,23,.15);pointer-events:none}
+.ba__knob{position:absolute;top:50%;left:var(--pos);z-index:3;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;pointer-events:none;color:var(--ygh-green-dark)}
+.ba__knob svg{width:16px;height:16px}
+.ba__count{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:3;padding:5px 10px;border-radius:20px;background:rgba(0,46,23,.75);color:#fff;font:700 9pt/1 var(--ygh-font-body);pointer-events:none}
+.ba input{position:absolute;inset:0;z-index:4;width:100%;height:100%;margin:0;opacity:0;cursor:ew-resize}
 
 /* icon row, like Alex's 4 icons */
 .icons{display:grid;grid-template-columns:repeat(4,1fr);gap:.2in;text-align:center}
@@ -255,10 +266,12 @@ html:has(.wait),body:has(.wait){background:#fff}
 #mdoc .mpage .p{font-size:16px!important;line-height:1.55}
 #mdoc .mpage .h1 + .p, #mdoc .mpage .h1 ~ .p{margin-top:12px!important}
 #mdoc .mpage.cover .mlight{padding:0 0 36px}
-/* The Yard: before and after side by side */
-#mdoc .mpage.yard .mlight > .wrap:not(.c){display:grid;grid-template-columns:1fr 1fr;gap:10px}
-#mdoc .mpage.yard .mlight > .wrap:not(.c) > .frame{margin-top:0!important;aspect-ratio:3/4!important}
-#mdoc .mpage.yard .tag{font-size:10px;padding:5px 8px;top:8px;left:8px}
+/* The Yard: one photo, drag to compare */
+#mdoc .mpage .ba{aspect-ratio:4/3!important}
+#mdoc .mpage .ba .tag{font-size:10px;padding:5px 8px;top:10px}
+#mdoc .mpage .ba .ba__tag--l{left:10px} #mdoc .mpage .ba .ba__tag--r{right:10px;left:auto}
+#mdoc .mpage .ba__knob{width:42px;height:42px;margin:-21px 0 0 -21px}
+#mdoc .mpage .ba__count{bottom:10px;font-size:10px}
 /* three-icon rows sit on one line */
 #mdoc .mpage .icons:has(> div:nth-child(3):last-child){grid-template-columns:repeat(3,1fr)!important;gap:22px 8px!important}
 #mdoc .mpage .icons:has(> div:nth-child(3):last-child) .t{font-size:13px}
@@ -2686,9 +2699,10 @@ function normalize(r){
   var d={ id:r.id, status:r.status||'ready', firstName:r.firstName, lastName:r.lastName, model:r.model, price:r.price, expert:r.expert,
           purpose:a.purpose||r.purpose, space:a.space||r.space, timing:a.timing||r.timing, budget:a.budget||r.budget,
           preparedDate:r.preparedDate, arUrl:r.arUrl };
-  var p=r.photos||{}, im=r.images||{};
-  d.images={ yardBefore:p.before||im.yardBefore, yardAfter:p.after||im.yardAfter };
-  d.hasYard=!!(d.images.yardBefore&&d.images.yardAfter);
+  /* photos: a list of {before, after} pairs, one Your Yard page each. A single {before, after} still works. */
+  var p=r.photos||{}, im=r.images||{}, list=Array.isArray(p)?p:[{before:p.before||im.yardBefore, after:p.after||im.yardAfter}];
+  d.yards=list.filter(function(y){ return y&&y.before&&y.after; }).map(function(y){ return {before:y.before, after:y.after}; });
+  d.hasYard=d.yards.length>0;
   d.site=r.site||null;
   return d;
 }
@@ -2886,6 +2900,15 @@ function setupLiveAR(root){
 }
 
 /* ============================================================ phone view: pages reflow into one scroll; print keeps letter pages */
+/* before / after slider, same as the landing page: drag to reveal, tags fade with their photo */
+function setupSliders(root){
+  [].forEach.call(root.querySelectorAll('.ba'),function(ba){
+    var rng=ba.querySelector('input'), tb=ba.querySelector('.ba__tag--l'), ta=ba.querySelector('.ba__tag--r');
+    function cl(v){ return Math.max(0,Math.min(1,v)); }
+    function up(){ var pos=+rng.value; ba.style.setProperty('--pos',pos+'%'); tb.style.opacity=cl((pos-12)/20); ta.style.opacity=cl((88-pos)/20); }
+    rng.addEventListener('input',up); up();
+  });
+}
 function mobileView(){
   var doc=document.getElementById('doc'), old=document.getElementById('mdoc'); if(old) old.remove();
   document.body.classList.remove('mob');   /* letter layout must be visible while we measure it */
@@ -2913,7 +2936,7 @@ function mobileView(){
     m.appendChild(sec);
   });
   document.body.appendChild(m); document.body.classList.add('mob');
-  setupPlan(m); setupLiveVideo(m,true); setupLiveAR(m);
+  setupPlan(m); setupSliders(m); setupLiveVideo(m,true); setupLiveAR(m);
 }
 var __mw=window.innerWidth; window.addEventListener('resize',function(){ if((__mw>820)!==(window.innerWidth>820)){ __mw=window.innerWidth; if(window.innerWidth>820&&!document.querySelector('#doc wistia-player')){ setupLiveVideo(document.getElementById('doc'),false); setupLiveAR(document.getElementById('doc')); } mobileView(); } });
 
@@ -3052,23 +3075,29 @@ function render(raw){
   var EX=null; if(!d.hasYard){ var ey=CONFIG.exampleYards||{}, pick=ey[mid];
     if(!(pick&&pick.before&&pick.after)) for(var kk in ey){ if(ey[kk].before&&ey[kk].after){ pick=ey[kk]; break; } }
     if(pick&&pick.before&&pick.after) EX=pick; }
-  var Y=d.hasYard?{before:d.images.yardBefore,after:d.images.yardAfter}:EX;
-  if(Y) h+='<section data-k="yard" class="page dark-foot">'+hdr()+
+  var YS=d.hasYard?d.yards:(EX?[EX]:[]);
+  YS.forEach(function(Y,yi){ var many=YS.length>1;
+  h+='<section data-k="yard" class="page dark-foot">'+hdr()+
      '<div class="wrap c" style="top:.95in"><div class="h1" style="font-size:62pt">'+(d.hasYard?'Your Yard':'The Yard')+'</div></div>'+
-     '<div class="band" style="top:4.6in"></div>'+
-     '<div class="wrap" style="top:2.15in;height:3.2in;z-index:2">'+
-       '<div class="frame" style="left:0;width:49%;height:100%">'+pic(Y&&Y.before,'')+'<span class="tag">Before</span></div>'+
-       '<div class="frame" style="right:0;width:49%;height:100%">'+pic(Y&&Y.after,'')+'<span class="tag g">After</span></div></div>'+
+     '<div class="band" style="top:5.1in"></div>'+
+     '<div class="wrap frame ba" style="top:2.05in;height:4.1in;z-index:2">'+
+       '<div class="ba__layer ba__after"><img alt="Your yard with your Nordwood" src="'+esc(Y.after)+'"></div>'+
+       '<div class="ba__layer ba__before"><img alt="Your yard before" src="'+esc(Y.before)+'"></div>'+
+       '<span class="tag ba__tag--l">Before</span><span class="tag g ba__tag--r">After</span>'+
+       (many?'<span class="ba__count">'+(yi+1)+' of '+YS.length+'</span>':'')+
+       '<span class="ba__line"></span><span class="ba__knob"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+       '<input class="noprint" type="range" min="0" max="100" value="50" aria-label="Drag to compare before and after"></div>'+
      (d.hasYard?
-     '<div class="wrap c" style="top:5.85in"><div class="h1" style="font-size:25pt;line-height:1.25;color:#fff">Same yard.<br>Now with your <em>Nordwood</em></div></div>'
-     :'<div class="wrap c" style="top:5.75in"><div class="h1" style="font-size:25pt;line-height:1.25;color:#fff">Same yard.<br>Now with a <em>Nordwood</em></div>'+
-      '<p class="p" style="margin-top:.12in;color:rgba(255,255,255,.82)">Send us a photo of yours, and we\u2019ll do the same for you.</p></div>')+
-     '<div class="wrap icons" style="top:7.55in">'+
+     '<div class="wrap c" style="top:6.5in"><div class="h1" style="font-size:25pt;line-height:1.25;color:#fff">Same yard.<br>Now with your <em>Nordwood</em></div></div>'
+     :'<div class="wrap c" style="top:6.45in"><div class="h1" style="font-size:25pt;line-height:1.25;color:#fff">Same yard.<br>Now with a <em>Nordwood</em></div>'+
+      '<p class="p" style="margin-top:.12in;color:rgba(255,255,255,.82)">Send us a photo of yours, and we’ll do the same for you.</p></div>')+
+     '<div class="wrap icons" style="top:7.95in">'+
        '<div>'+icon('home')+'<div class="t">Your model</div><div class="s">'+M.name+'</div></div>'+
        '<div>'+icon('ruler')+'<div class="t">Floor space</div><div class="s">'+M.sqft+' sq ft</div></div>'+
        '<div>'+icon(P.icon)+'<div class="t">Built for</div><div class="s">'+P.short+'</div></div>'+
        '<div>'+icon('truck')+'<div class="t">Delivery</div><div class="s">'+CONFIG.weeks[0]+' to '+CONFIG.weeks[1]+' weeks</div></div>'+
      '</div>'+ftr(true)+'</section>';
+  });
 
   /* 5. WHERE IT GOES: interactive, true-scale site plan */
   var isDemo=d.id==='demo'||!d.id;
@@ -3172,11 +3201,11 @@ function render(raw){
   var doc=document.getElementById('doc'); doc.innerHTML=h;
   /* reading order: feeling first, facts second, options last, then the ask */
   ['cover','match','design','yard','where','walk','built','specs','foundation','delivery','watch','also','roadmap','cta'].forEach(function(k){
-    var el=doc.querySelector('[data-k="'+k+'"]'); if(el) doc.appendChild(el); });
+    [].forEach.call(doc.querySelectorAll('[data-k="'+k+'"]'),function(el){ doc.appendChild(el); }); });
   [].forEach.call(doc.querySelectorAll('.ftr > span:last-child'),function(n,i){ n.textContent=i+2; });
   var order=[].map.call(doc.querySelectorAll('section.page'),function(p){return p.getAttribute('data-k');});
   [].forEach.call(doc.querySelectorAll('[data-pref]'),function(n){ n.textContent=order.indexOf(n.getAttribute('data-pref'))+1; });
-  setupPlan(doc); if(window.innerWidth>820){ setupLiveVideo(doc,false); setupLiveAR(doc); } mobileView();
+  setupPlan(doc); setupSliders(doc); if(window.innerWidth>820){ setupLiveVideo(doc,false); setupLiveAR(doc); } mobileView();
   document.title=(d.firstName?esc(d.firstName)+', ':'')+'Nordwood Backyard Design';
 }
 loadRecord().then(function(r){

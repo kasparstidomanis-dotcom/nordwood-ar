@@ -468,15 +468,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       <div class="alt"><button type="button" class="link" id="later">I'll text them to you later</button></div>
     </div>
 
-    <div class="step" data-step="8">
-      <p class="step__k">Optional</p>
-      <h2>Anything we should know?</h2>
-      <p class="hint">Where you're thinking of putting it, or what it's for.</p>
-      <label class="fld"><textarea id="fNote" aria-label="Anything we should know"></textarea></label>
-      <button type="button" class="btn" id="submit">Get my design <svg><use href="#arr"/></svg></button>
-    </div>
-
-    <div class="step done" data-step="9">
+    <div class="step done" data-step="8">
       <h2 class="done__h">Your Nordwood<br>is ready.<br><em>See it in your yard</em></h2>
       <p class="done__sub">Full size, right now, on your phone.</p>
       <p class="dnote" id="dNote"></p>
@@ -541,13 +533,13 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   });
 
   var qz = document.getElementById('qz'), bar = document.getElementById('qzBar'), back = document.getElementById('qzBack');
-  var steps = [].slice.call(qz.querySelectorAll('.step')), cur = 1, LAST_Q = 8, answers = {}, photosLater = false;
+  var steps = [].slice.call(qz.querySelectorAll('.step')), cur = 1, LAST_Q = 7, answers = {}, photosLater = false;
 
   function show(n) {
     cur = n;
     steps.forEach(function (s) { s.classList.toggle('on', +s.dataset.step === n); });
-    bar.style.width = (n === 9 ? 100 : Math.round((n - 1) / LAST_Q * 100)) + '%';
-    back.hidden = (n === 1 || n === 9);
+    bar.style.width = (n === 8 ? 100 : Math.round((n - 1) / LAST_Q * 100)) + '%';
+    back.hidden = (n === 1 || n === 8);
     qz.querySelector('.qz__card').scrollTop = 0;
   }
   function open() { qz.hidden = false; document.body.classList.add('locked'); show(cur); }
@@ -598,8 +590,8 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
     document.getElementById('dropS').textContent = c ? 'Tap to change' : 'From your camera or your photo library';
     sp.disabled = !c;
   });
-  sp.addEventListener('click', function () { photosLater = false; show(8); });
-  document.getElementById('later').addEventListener('click', function () { photosLater = true; show(8); });
+  sp.addEventListener('click', function () { photosLater = false; finish(); });
+  document.getElementById('later').addEventListener('click', function () { photosLater = true; finish(); });
 
   // the matched model (kept in step with design.html)
   var PRICE = { greenhouse: 13668, classic: 11462, arrow: 8995, arrowMini: 7440 };
@@ -621,8 +613,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       address: document.getElementById('fAddr').value.trim(),
       zip: document.getElementById('fZip').value.trim(),
       purpose: answers.purpose, space: answers.space, timing: answers.timing, budget: answers.budget,
-      hasPhotos: !photosLater && fp.files.length > 0,
-      note: document.getElementById('fNote').value.trim()
+      hasPhotos: !photosLater && fp.files.length > 0
     };
   }
   /* ---------- SANDBOX: open the page with ?test=1 ----------
@@ -678,9 +669,9 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   }
 
   // submit
-  document.getElementById('submit').addEventListener('click', function () {
+  function finish() {
     send();
-    show(9);
+    show(8);
     var mv = document.getElementById('mv');
     if (!mv.src) {
       mv.addEventListener('load', function () {
@@ -738,7 +729,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       // swipe left/right on the viewer is left alone: it spins the model, as before
       go(0);
     }
-  });
+  }
 
   // video loads on click
   document.querySelectorAll('[data-play]').forEach(function (btn) {
