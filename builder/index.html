@@ -23,8 +23,8 @@
   .tab .ok{color:var(--g2)} .tab .warn{color:var(--amber)}
   .stage{position:relative;background:#1b231e;border-radius:12px;overflow:hidden;user-select:none;touch-action:none}
   #planCv{display:block;width:100%;cursor:grab}
-  .photoWrap{position:relative;width:100%;margin:0 auto}
-  .photoWrap img.bg{display:block;width:100%;height:auto;pointer-events:none}
+  .photoWrap{position:relative;width:fit-content;max-width:100%;margin:0 auto}
+  .photoWrap img.bg{display:block;width:auto;max-width:100%;height:auto;max-height:calc(100vh - 200px);pointer-events:none}
   .photoWrap canvas{position:absolute;inset:0;width:100%;height:100%}
   .rotBtn{position:absolute;width:34px;height:34px;border-radius:50%;background:#fff;color:var(--ink);border:2px solid var(--ink);display:grid;place-items:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:translate(-50%,-50%);z-index:5}
   .rotBtn svg{width:18px;height:18px}
@@ -428,9 +428,10 @@ const photo3d = (() => {
     model.position.set(-c.x, -box.min.y, -c.z);  // centre on the origin, standing on the ground
     holder.add(model);
   }
+  function hfovOf(p) { const W = img.naturalWidth || 4, H = img.naturalHeight || 3; return W >= H ? p.hfov : 2 * Math.atan(Math.tan(p.hfov * Math.PI / 360) * W / H) * 180 / Math.PI; }
   function camFor(p) {
     const W = img.naturalWidth || 4, H = img.naturalHeight || 3, aspect = W / H;
-    const fpx = (W / 2) / Math.tan(p.hfov * Math.PI / 360);
+    const fpx = (W / 2) / Math.tan(hfovOf(p) * Math.PI / 360);
     cam.fov = 2 * Math.atan((H / 2) / fpx) * 180 / Math.PI; cam.aspect = aspect;
     const pitch = Math.atan(((0.5 - p.horizon) * H) / fpx);  // horizon above the centre = camera looking down
     cam.position.set(0, p.camH, 0); cam.rotation.set(-pitch, 0, 0); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
@@ -465,10 +466,10 @@ const photo3d = (() => {
     $('pHeight').value = String(p.camH); $('pSun').value = p.sunAz;
     if (p.horizon == null) p.horizon = 0.42;
     resize(); await ensureModel();
-    if (!p.place && p.depthState !== 'running' && p.depthState !== 'waiting') {
+    if (!p.place) {
       // start where the greenhouse fills about 45% of the photo width, straight ahead on the lawn
       const len = model ? new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).z : 5;
-      const dist = Math.max(6, len / (0.45 * 2 * Math.tan(p.hfov * Math.PI / 360)));
+      const dist = Math.max(6, len / (0.45 * 2 * Math.tan(hfovOf(p) * Math.PI / 360)) || 12);
       p.place = { x: 0, z: -dist, rot: 20, mirror: false };
     }
     hint(); draw();
