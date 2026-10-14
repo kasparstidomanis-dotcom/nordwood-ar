@@ -28,6 +28,8 @@
   .photoWrap canvas{position:absolute;inset:0;width:100%;height:100%}
   .rotBtn{position:absolute;width:34px;height:34px;border-radius:50%;background:#fff;color:var(--ink);border:2px solid var(--ink);display:grid;place-items:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:translate(-50%,-50%);z-index:5}
   .rotBtn svg{width:18px;height:18px}
+  .rotBtn{cursor:grab} .rotBtn:active{cursor:grabbing}
+  .rotBtn .deg{position:absolute;left:40px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.75);color:#fff;font:700 12px/1 system-ui;padding:4px 6px;border-radius:6px;white-space:nowrap;display:none} .rotBtn.turning .deg{display:block}
   .hz{position:absolute;left:0;right:0;height:0;border-top:2px dashed rgba(255,214,102,.95);z-index:4;pointer-events:none}
   .hzGrip{position:absolute;right:6px;transform:translateY(-50%);background:#ffd666;color:#1b1404;font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px;cursor:ns-resize;pointer-events:auto;box-shadow:0 2px 6px rgba(0,0,0,.35)}
   .busy{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:6px 10px;border-radius:8px;z-index:6}
@@ -55,6 +57,7 @@
   .modal h3{margin:0 0 8px}
   .local{display:grid;gap:8px} .local input{padding:8px;border:1px solid var(--line);border-radius:7px;font:inherit;width:100%}
   kbd{font:12px ui-monospace,monospace;background:#eef2ee;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  #submitBtn.done{opacity:1;background:#1f8f55;color:#fff;border-color:#1f8f55;cursor:default}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
 </head><body>
@@ -81,12 +84,11 @@
     </div>
     <div id="photoView" hidden>
       <div class="stage"><div class="photoWrap" id="photoWrap"><img class="bg" id="photoImg" alt=""><canvas id="threeCv"></canvas>
-        <button class="rotBtn" id="pRotL" title="Rotate left 15° (Q)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9a8 8 0 1 1 1.6 7.5"/><path d="M4 3v6h6"/></svg></button>
-        <button class="rotBtn" id="pRotR" title="Rotate right 15° (E)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 9a8 8 0 1 0-1.6 7.5"/><path d="M20 3v6h-6"/></svg></button>
+        <button class="rotBtn" id="pRot" title="Drag around the greenhouse to turn it (2° steps), click for 15°" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 3v5h-5"/></svg><span class="deg" id="pRotDeg"></span></button>
         <div class="hz" id="hz"><span class="hzGrip" id="hzGrip">Eye level ↕</span></div>
         <div class="busy" id="photoBusy" hidden></div><div class="hint" id="photoHint"></div></div></div>
       <div class="toolbar">
-        <div class="grp"><button id="pRot90">Turn 90°</button><button id="pMirror">Doors other side</button></div>
+        <div class="grp"><label>Rotate <input type="range" id="pRotRange" min="0" max="359" step="1" value="0" style="width:140px;vertical-align:middle"></label><button id="pRot90">Turn 90°</button><button id="pMirror">Doors other side</button></div>
         <div class="grp"><button id="pGrid" class="on">Ground grid</button><button id="pPerson">5'9" person</button></div>
         <label>Lens <select id="pLens"><option value="63">Phone (1x)</option><option value="100">Phone wide (0.5x)</option><option value="42">Phone zoom (2x)</option><option value="75">Wide camera</option></select></label>
         <label>Taken from <select id="pHeight"><option value="1.6">Standing on the ground</option><option value="3">Deck or porch</option><option value="5">Upstairs window</option></select></label>
@@ -453,10 +455,11 @@ const photo3d = (() => {
       const box = new THREE.Box3().setFromObject(holder); const pts = [];
       for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) pts.push(new THREE.Vector3(x, y, z).project(cam));
       const xs = pts.map((v) => (v.x + 1) / 2 * r.width), ys = pts.map((v) => (1 - v.y) / 2 * r.height);
-      const top = Math.max(18, Math.min(...ys) - 6);
-      Object.assign($('pRotL').style, { left: Math.max(18, Math.min(...xs) - 10) + 'px', top: top + 'px' }); Object.assign($('pRotR').style, { left: Math.min(r.width - 18, Math.max(...xs) + 10) + 'px', top: top + 'px' });
-      $('pRotL').hidden = $('pRotR').hidden = false;
-    } else $('pRotL').hidden = $('pRotR').hidden = true;
+      // the handle sits under the greenhouse, centred on its ground position; dragging it around that point turns the model
+      const gc = new THREE.Vector3(cur.place.x, 0, cur.place.z).project(cam); rotCentre = [(gc.x + 1) / 2 * r.width, (1 - gc.y) / 2 * r.height];
+      Object.assign($('pRot').style, { left: Math.max(20, Math.min(r.width - 20, rotCentre[0])) + 'px', top: Math.max(20, Math.min(r.height - 20, Math.max(...ys) + 24)) + 'px' });
+      $('pRot').hidden = false; $('pRotRange').value = cur.place.rot; $('pRotDeg').textContent = cur.place.rot + '°';
+    } else $('pRot').hidden = true;
     $('hz').style.top = (cur.horizon * r.height) + 'px';
   }
   async function open(p) {
@@ -498,12 +501,15 @@ const photo3d = (() => {
     draw(); });
   $('hzGrip').addEventListener('pointerup', () => { hdrag = false; });
   function rotateBy(d) { if (!cur || !cur.place) return; cur.place.rot = (cur.place.rot + d + 360) % 360; draw(); }
-  for (const [id, dir] of [['pRotL', 1], ['pRotR', -1]]) {
-    const btn = $(id); let rd = null;
-    btn.addEventListener('pointerdown', (e) => { if (!cur || !cur.place) return; rd = { x: e.clientX, r0: cur.place.rot, moved: false }; btn.setPointerCapture(e.pointerId); e.preventDefault(); });
-    btn.addEventListener('pointermove', (e) => { if (!rd) return; const dx = e.clientX - rd.x; if (!rd.moved && Math.abs(dx) < 4) return; rd.moved = true;
-      cur.place.rot = ((Math.round((rd.r0 - dx * 0.5) / 2) * 2) % 360 + 360) % 360; $('photoHint').textContent = 'Turned to ' + cur.place.rot + '°'; draw(); });
-    btn.addEventListener('pointerup', () => { if (rd && !rd.moved) rotateBy(dir * 15); rd = null; hint(); });
+  let rotCentre = [0, 0];
+  { const btn = $('pRot'); let rd = null;
+    const ang = (e) => { const r = wrap.getBoundingClientRect(); return Math.atan2(e.clientY - r.top - rotCentre[1], e.clientX - r.left - rotCentre[0]) * 180 / Math.PI; };
+    btn.addEventListener('pointerdown', (e) => { if (!cur || !cur.place) return; rd = { a0: ang(e), r0: cur.place.rot, x: e.clientX, y: e.clientY, moved: false }; btn.setPointerCapture(e.pointerId); e.preventDefault(); e.stopPropagation(); });
+    btn.addEventListener('pointermove', (e) => { if (!rd) return; if (!rd.moved && Math.hypot(e.clientX - rd.x, e.clientY - rd.y) < 4) return; rd.moved = true; btn.classList.add('turning');
+      cur.place.rot = ((Math.round((rd.r0 + (ang(e) - rd.a0)) / 2) * 2) % 360 + 360) % 360; draw(); });
+    btn.addEventListener('pointerup', () => { if (rd && !rd.moved) rotateBy(15); rd = null; btn.classList.remove('turning'); });
+    $('pRotRange').addEventListener('input', (e) => { if (!cur || !cur.place) return; cur.place.rot = +e.target.value; draw(); });
+    cv.addEventListener('wheel', (e) => { if (!cur || !cur.place) return; e.preventDefault(); rotateBy(e.deltaY > 0 ? 2 : -2); }, { passive: false });
   }
   $('pRot90').onclick = () => rotateBy(90);
   $('pMirror').onclick = () => { if (cur && cur.place) { cur.place.mirror = !cur.place.mirror; draw(); } };
@@ -544,7 +550,7 @@ function checks() {
   if (!S.photos.length) items.push(['No photos in this request', true]);
   $('checks').innerHTML = items.map(([t, ok]) => `<div class="check ${ok ? 'ok' : ''}"><span class="d"></span>${esc(t)}</div>`).join('');
   const ready = items.every(([, ok]) => ok) && S.photos.some((p) => p.status === 'done') && !!PRODUCTS[S.product].glb;
-  $('submitBtn').disabled = !ready || S.submitted;
+  $('submitBtn').disabled = !ready || S.submitted; $('submitBtn').classList.toggle('done', !!S.submitted); $('submitBtn').textContent = S.submitted ? '✓ Submitted' : 'Submit for AI images';
   $('submitNote').textContent = S.submitted ? 'Submitted.' : ready ? 'Ready: submit sends the placed photos to the AI (3 versions each, about a minute per photo).' : 'Place the greenhouse in every photo (or skip it) to submit.';
 }
 function planSnapshot() {   // the plan as the team placed it, at 1600 px, for the PDF
@@ -556,7 +562,7 @@ function planSnapshot() {   // the plan as the team placed it, at 1600 px, for t
   Object.assign(S.view, { x: prev.x, y: prev.y, s: prev.s }); PW = prev.PW; PH = prev.PH; DPR = prev.DPR; sizePlan(); drawPlan(); return url;
 }
 $('submitBtn').onclick = async () => {
-  $('submitBtn').disabled = true; $('submitNote').textContent = 'Preparing…';
+  $('submitBtn').disabled = true; $('submitBtn').textContent = 'Submitting…'; $('submitNote').textContent = 'Preparing…';
   const pkg = { v: 1, request: S.req.id || null, at: new Date().toISOString(), product: S.product, productName: PRODUCTS[S.product].name,
     customer: { name: S.req.name, address: S.req.address },
     plan: { lat: S.plan.lat, lng: S.plan.lng, zoom: S.plan.zoom, mpp: S.plan.mpp, spots: S.spots },
@@ -572,7 +578,7 @@ $('submitBtn').onclick = async () => {
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(pkg)], { type: 'application/json' })); a.download = 'backyard-package.json'; a.click();
       S.submitted = true; $('submitNote').textContent = 'Test mode: the package was saved as a file.';
     }
-  } catch (e) { $('submitNote').textContent = 'Could not submit: ' + e.message; $('submitBtn').disabled = false; return; }
+  } catch (e) { $('submitNote').textContent = 'Could not submit: ' + e.message; $('submitBtn').disabled = false; $('submitBtn').textContent = 'Submit for AI images'; return; }
   checks();
 };
 window.__bb = { S, photo3d, drawPlan, planSnapshot };
