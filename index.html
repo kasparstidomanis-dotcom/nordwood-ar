@@ -531,7 +531,7 @@ window.YGH_SUBMIT = function (d, files) {
       fd.append('model', { greenhouse: 'tshape', classic: 'classic', arrow: 'arrow', arrowMini: 'arrow-mini' }[window.YGH_MATCH] || 'unsure'); fd.append('consent', '1'); fd.append('page', location.href.split('#')[0]);
       ['purpose', 'space', 'timing', 'budget'].forEach(function (k) { if (d[k]) fd.append(k, d[k]); });
       fd.append('notes', ['Purpose: ' + d.purpose, 'Space: ' + d.space, 'Timing: ' + d.timing, 'Budget: ' + d.budget, d.note].filter(Boolean).join(' | ').slice(0, 1500));
-      for (var i = 0; i < Math.min(5, files.length); i++) fd.append('photo', await shrink(files[i]));
+      for (var i = 0; i < Math.min(15, files.length); i++) fd.append('photo', await shrink(files[i]));   // all photos are kept; the team picks which ones the AI gets
       if (!files.length) fd.append('later', '1');
       try { var hutk = document.cookie.match(/hubspotutk=([^;]+)/); if (hutk) fd.append('hutk', hutk[1]); } catch (e) {}
       var r = await fetch(window.YGH_WORKER + '/submit', { method: 'POST', body: fd }); var j = await r.json().catch(function () { return {}; });

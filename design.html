@@ -97,6 +97,11 @@ a{color:inherit;text-decoration:none}
 .mlist small{font:500 10pt/1 var(--ygh-font-body);letter-spacing:.04em;color:rgba(255,255,255,.6);text-transform:none}
 .mlist .on{background:var(--ygh-green);border-radius:3px}
 .mlist .on small{color:#fff}
+.mlist [data-m]{cursor:pointer;border:1.5px solid transparent;border-radius:3px;transition:background .15s,border-color .15s}
+.mlist [data-m]:not(.on):hover{background:rgba(255,255,255,.06)}
+.mlist .sel:not(.on){border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.08)}
+.viewing{position:absolute;left:12px;bottom:12px;z-index:3;padding:6px 11px;border-radius:3px;background:var(--ygh-green);color:#fff;font:800 9pt/1 var(--ygh-font-highlight);letter-spacing:.14em;text-transform:uppercase;pointer-events:none}
+.arframe:not(.live) .viewing{display:none}
 
 /* design table, like Alex's stage table */
 .tbl{border:2px solid var(--ygh-green-dark);border-radius:4px;overflow:hidden}
@@ -134,14 +139,16 @@ a{color:inherit;text-decoration:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;padding:16px 34px;border-radius:8px;background:var(--ygh-green-button);color:#fff;font:700 13pt/1 var(--ygh-font-body);letter-spacing:.04em;text-transform:uppercase;box-shadow:4px 4px 0 0 #000}
 .arbtn{position:absolute;left:50%;bottom:.28in;transform:translateX(-50%);display:flex;align-items:center;gap:12px;white-space:nowrap;padding:16px 30px;border-radius:8px;background:var(--ygh-green-button);color:#fff;font:700 14pt/1 var(--ygh-font-body);letter-spacing:.04em;text-transform:uppercase;box-shadow:4px 4px 0 0 var(--ygh-shadow);z-index:3}
 .arbtn svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.spec{border:2px solid var(--ygh-green-dark);border-radius:4px;overflow:hidden;background:#fff}
-.spec .title{background:var(--ygh-green-dark);color:#fff;text-align:center;padding:.14in;font:400 22pt/1 var(--ygh-font-heading);text-transform:uppercase;letter-spacing:.8px}
+.spec{border:0;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.14),0 22px 44px -14px rgba(0,0,0,.6)}
+.spec .title{background:var(--ygh-green);color:#fff;text-align:center;padding:.14in;font:400 22pt/1 var(--ygh-font-heading);text-transform:uppercase;letter-spacing:.8px}
 .spec .title .vs{font:800 11pt/1 var(--ygh-font-highlight);font-style:normal;letter-spacing:.1em;color:#5fd38f;margin-left:10px;background:none;padding:0}
 .spec .cols{display:grid;grid-template-columns:1fr 1fr}
 .spec .cols > div + div{border-left:1px solid var(--ygh-grey-light)}
 .spec .sr{display:flex;justify-content:space-between;gap:12px;padding:9px 14px;border-top:1px solid var(--ygh-grey-light);font:400 10pt/1.35 var(--ygh-font-body)}
 .spec .sr span{color:var(--ygh-grey);white-space:nowrap}
 .spec .sr b{color:var(--ygh-green-dark);font-weight:600;text-align:right}
+.spec .sr:nth-child(even){background:#f3f8f1}
+.spec .cols > div > .sr:first-child{border-top:0}
 .quote{font:italic 400 13pt/1.6 var(--ygh-font-body);color:#fff}
 .quote.lt{color:var(--ygh-green-dark)}
 .qby{font:800 9.5pt/1 var(--ygh-font-highlight);letter-spacing:.14em;text-transform:uppercase;color:#5fd38f;margin-top:.12in}
@@ -251,6 +258,7 @@ html:has(.wait),body:has(.wait){background:#fff}
 .arframe .arhint{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:calc(100% - 24px);margin:0;padding:8px 14px;border-radius:99px;background:var(--ygh-green-dark);color:#fff;font:600 13px/1.3 var(--ygh-font-body);pointer-events:none}
 .arframe .arhint svg{width:18px;height:18px;flex:none;stroke:#fff;fill:none;stroke-width:3}
 .arframe.live .tag{display:none}
+.arframe.live:has([data-view]) .tag{display:block;top:auto;bottom:12px}
 .arframe.live .arbtn{z-index:4}
 .arframe .arbtn[hidden]{display:none}
 .mpage .arframe.live{aspect-ratio:4/3!important}
@@ -2644,7 +2652,7 @@ var CONFIG = {
   sampleSite: {"img": "img/sample-site.jpg", "w": 1000, "h": 700, "ftPerPx": 0.1, "suggest": {"x": 300, "y": 430, "angle": 90}},
   vsl: { phone:'6ad10gdkcl', desktop:'2h4cd7iz1d', url:'https://fast.wistia.net/embed/iframe/6ad10gdkcl', poster:'https://yourgreenhouses.com/cdn/shop/files/SCR-20260807-ptwa.webp?v=1786122230&width=1200' },
   expert: { name:'your greenhouse expert', phone:'+1 201-529-0531', booking:'https://yourgreenhouses.com/pages/call-us',
-            face:'Kaspar', role:'Your greenhouse expert', photo:'img/expert-kaspar.jpg' },
+            face:'', role:'YourGreenhouses Expert', photo:'img/expert-kaspar.jpg' },
   // Foundation page. Sources: product page FAQ + your recommendation. Verify against the manual.
   foundation: { pad:'4 to 6 inches deep', extra:2, /* extra feet of pad on every side */ also:['A deck','A paved surface'] },
   logo: 'https://yourgreenhouses.com/cdn/shop/files/ygh-logo-2026-horizontal-green.png'
@@ -2880,7 +2888,14 @@ function setupLiveAR(root){
   var boxes=root.querySelectorAll('[data-ar]'); if(!boxes.length) return;
   [].forEach.call(boxes,function(box){
     var id=box.getAttribute('data-ar'), f=CONFIG.arFiles[id]; if(!f) return;
-    var name=(CONFIG.models[id]||{}).name||'Nordwood';
+    var name=(CONFIG.models[id]||{}).name||'Nordwood', view=box.hasAttribute('data-view');
+    if(view){
+      box.innerHTML='<model-viewer src="'+f.glb+'" alt="The '+name+'" camera-controls touch-action="pan-y" auto-rotate rotation-per-second="14deg" auto-rotate-delay="1500"'+
+        ' interaction-prompt="none" camera-orbit="35deg 72deg auto" max-camera-orbit="auto 88deg auto" shadow-intensity="1" shadow-softness="0.8"'+
+        ' exposure="1.05" tone-mapping="neutral" environment-image="'+CONFIG.arSky+'"></model-viewer>'+
+        '<p class="arhint">'+icon('tap')+'<span>Drag to turn it around</span></p>';
+      var vf=box.closest('.arframe'); if(vf) vf.classList.add('live'); return;
+    }
     box.innerHTML='<model-viewer src="'+f.glb+'"'+(f.usdz?' ios-src="'+f.usdz+'"':'')+' alt="The '+name+', at real size"'+
       ' ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor" camera-controls touch-action="pan-y" auto-rotate rotation-per-second="14deg"'+
       ' interaction-prompt="none" camera-orbit="35deg 72deg auto" max-camera-orbit="auto 88deg auto" shadow-intensity="1" shadow-softness="0.8"'+
@@ -2897,6 +2912,20 @@ function setupLiveAR(root){
     mv.addEventListener('load',function(){ if(!mv.canActivateAR){ box.querySelector('.arhint span').textContent='Open this on your phone to place it in your yard'; if(btn) btn.hidden=true; } },{once:true});
   });
   loadModelViewer();
+  setupMatchSwitch(root);
+}
+/* Your Match: tap a size to see it in 3D. The match stays highlighted as "Your match". */
+function setupMatchSwitch(root){
+  var pg=root.querySelector('[data-k="match"]'); if(!pg) return;
+  var mv=pg.querySelector('model-viewer'), lbl=pg.querySelector('.viewing');
+  [].forEach.call(pg.querySelectorAll('.mlist [data-m]'),function(it){
+    it.addEventListener('click',function(){
+      var id=it.getAttribute('data-m'), f=CONFIG.arFiles[id]; if(!f||!mv) return;
+      [].forEach.call(pg.querySelectorAll('.mlist [data-m]'),function(o){ o.classList.toggle('sel',o===it); });
+      mv.setAttribute('src',f.glb); mv.setAttribute('alt','The '+CONFIG.models[id].name);
+      if(lbl) lbl.innerHTML=it.classList.contains('on')?'Your match':CONFIG.models[id].name;
+    });
+  });
 }
 
 /* ============================================================ phone view: pages reflow into one scroll; print keeps letter pages */
@@ -2973,15 +3002,16 @@ function render(raw){
 
   /* 2. YOUR MATCH (Alex p2 "You are here") */
   var lu=CONFIG.lineup.slice(); if(lu.indexOf(mid)<0) lu[lu.length-1]=mid;
-  var ml=''; lu.forEach(function(id){ var m=CONFIG.models[id]; ml+='<div class="'+(id===mid?'on':'')+'">'+m.short+' <small>'+m.sqft+' sq ft</small></div>'; });
+  var ml=''; lu.forEach(function(id){ var m=CONFIG.models[id]; ml+='<div role="button" tabindex="0" data-m="'+id+'" class="'+(id===mid?'on sel':'')+'">'+m.short+' <small>'+m.sqft+' sq ft</small></div>'; });
   h+='<section data-k="match" class="page dark-foot">'+hdr()+
      '<div class="wrap c" style="top:.95in"><div class="h1" style="font-size:66pt">Your Match</div>'+
      '<div class="h1" style="font-size:30pt;margin-top:.12in"><em>'+M.name+'</em></div>'+
      '<div style="width:0;height:0;margin:.22in auto 0;border-left:.4in solid transparent;border-right:.4in solid transparent;border-top:.4in solid var(--ygh-green)"></div></div>'+
      '<div class="band" style="top:5.55in"></div>'+
-     '<div class="wrap frame" style="top:3.25in;height:3.3in;z-index:2">'+(CONFIG.swapHero&&M.hero?'<div class="img" style="background-image:url(\''+M.hero+'\');background-position:'+(M.heroPos||'center')+'"></div>':'<div class="img" style="background:var(--ygh-green-mint) url(\''+M.render+'\') center/auto 88% no-repeat"></div>')+'</div>'+
+     '<div class="wrap frame arframe" style="top:3.25in;height:3.3in;z-index:2"><div class="img" style="background:var(--ygh-green-mint) url(\''+M.render+'\') center/auto 88% no-repeat"></div>'+
+       '<div class="arlive noprint" data-ar="'+mid+'" data-view></div><span class="viewing noprint">Your match</span></div>'+
      '<div class="wrap" style="top:7.15in"><div class="mlist">'+ml+'</div>'+
-     '<p class="p c" style="margin-top:.36in;color:rgba(255,255,255,.82)">Four sizes. One matches your answers. <b style="color:#fff">This is it.</b></p></div>'+
+     '<p class="p c" style="margin-top:.36in;color:rgba(255,255,255,.82)">Four sizes. One matches your answers. <b style="color:#fff">This is it.</b><span class="noprint"> Tap any size to see it.</span></p></div>'+
      ftr(true)+'</section>';
 
   /* 3. SPECS for the match, 4. ALSO FITS YOUR YARD (next size down) */
@@ -2995,7 +3025,8 @@ function render(raw){
   h+='<section data-k="specs" class="page dark-foot">'+hdr()+
      '<div class="wrap c" style="top:.95in"><div class="h1" style="font-size:58pt">Your <em>specs</em></div></div>'+
      '<div class="band" style="top:4.4in"></div>'+
-     '<div class="wrap frame" style="top:2.15in;height:3.05in;z-index:2"><div class="img" style="background:var(--ygh-green-mint) url(\''+M.render+'\') center/auto 88% no-repeat"></div><span class="tag g">'+M.name+'</span></div>'+
+     '<div class="wrap frame arframe" style="top:2.15in;height:3.05in;z-index:2"><div class="img" style="background:var(--ygh-green-mint) url(\''+M.render+'\') center/auto 88% no-repeat"></div>'+
+       '<div class="arlive noprint" data-ar="'+mid+'" data-view></div><span class="tag g">'+M.name+'</span></div>'+
      '<div class="wrap" style="top:5.6in">'+specTable(M,M.name)+'</div>'+
      ftr(true)+'</section>';
   /* FOUNDATION: not included, what we recommend */
@@ -3171,9 +3202,8 @@ function render(raw){
        '<span class="tag g" style="top:auto;bottom:12px">Tap to play</span>'+
        '<div class="wlive noprint" data-wistia></div>'+
        '</a>'+
-     '<div class="wrap c" style="top:6.1in"><div class="h1" style="font-size:25pt;line-height:1.3;color:#fff">Custom-build quality.<br><em>Without the custom bill.</em></div>'+
-     '<p class="p" style="margin-top:.14in;color:rgba(255,255,255,.82)">A custom glass house is built by hand on your lawn. You pay for every hour.<br>Your Nordwood is precision cut in our factory. You pay for the greenhouse.</p></div>'+
-     '<div class="wrap icons" style="top:8.2in">'+
+     '<div class="wrap c" style="top:6.1in"><div class="h1" style="font-size:25pt;line-height:1.3;color:#fff">Custom-build quality.<br><em>Without the custom bill.</em></div></div>'+
+     '<div class="wrap icons" style="top:7.55in">'+
        '<div>'+icon('laser')+'<div class="t">Precision cut</div><div class="s">Every piece fits</div></div>'+
        '<div>'+icon('tree')+'<div class="t">Nordic spruce</div><div class="s">Strong, warm timber</div></div>'+
        '<div>'+icon('glass')+'<div class="t">Safety glass</div><div class="s">Tempered, every panel</div></div>'+
@@ -3190,7 +3220,7 @@ function render(raw){
        '<div>'+icon('cal')+'<div class="t">Your timing</div><div class="s">'+T.told+'</div></div>'+
      '</div>'+
      '<div class="band" style="top:5.4in"></div>'+
-     '<div class="wrap c" style="top:4.8in">'+face(1.25)+'<p class="qby" style="margin-top:.12in;color:#fff">'+esc(E.face)+' &bull; <span style="color:#5fd38f">'+esc(E.role)+'</span></p></div>'+
+     '<div class="wrap c" style="top:4.8in">'+face(1.25)+'<p class="qby" style="margin-top:.12in;color:#fff">'+(E.face?esc(E.face)+' &bull; ':'')+'<span style="color:#5fd38f">'+esc(E.role)+'</span></p></div>'+
      '<div class="wrap c" style="top:6.75in">'+
        '<div class="h1" style="font-size:30pt;color:#fff">Book your <em>design call</em></div>'+
        '<p class="p" style="margin:.18in auto 0;max-width:5.2in;color:rgba(255,255,255,.82)">You\u2019ve seen it in your yard. Now let\u2019s talk it through. Your design, your spot, your timing.</p>'+

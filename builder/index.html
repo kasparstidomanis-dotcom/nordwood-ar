@@ -172,7 +172,7 @@ async function start(req) {
     .filter(([, v]) => v).map(([k, v]) => `<div>${k}</div><div>${esc(v)}</div>`).join('');
   if (req.listUrl) { $('backLink').href = req.listUrl; $('backLink').hidden = false; }
   S.photos = (req.photos || []).map((p, i) => ({ i, url: typeof p === 'string' ? p : p.url, file: p.file || null, hfov: 63, camH: 1.6, horizon: null, auto: null,
-    depthState: 'waiting', place: null, status: 'todo', sunAz: 220 }));
+    depthState: 'waiting', place: null, status: i < (req.aiPhotos || 5) ? 'todo' : 'extra', sunAz: 220 }));   // extras: collected, not sent to the AI unless the team opts in
   S.tab = S.photos.length ? 0 : 'plan'; renderTabs(); renderSpots(); checks();
   $('planView').hidden = S.tab !== 'plan'; $('photoView').hidden = S.tab === 'plan'; $('planCard').hidden = S.tab !== 'plan';
   loadPlan(19);
@@ -184,7 +184,7 @@ $('product').onchange = () => { S.product = $('product').value; drawPlan(); if (
 /* ======================= tabs ======================= */
 function renderTabs() {
   const t = [];
-  S.photos.forEach((p, i) => t.push(`<div class="tab ${S.tab === i ? 'on' : ''}" data-t="${i}"><img src="${esc(p.url)}" alt=""><div>Photo ${i + 1}<small class="${p.status === 'done' ? 'ok' : p.status === 'skip' ? '' : 'warn'}">${p.status === 'done' ? 'placed ✓' : p.status === 'skip' ? 'skipped' : p.depthState === 'running' ? 'finding ground…' : 'to place'}</small></div></div>`));
+  S.photos.forEach((p, i) => t.push(`<div class="tab ${S.tab === i ? 'on' : ''}" data-t="${i}"><img src="${esc(p.url)}" alt=""><div>Photo ${i + 1}<small class="${p.status === 'done' ? 'ok' : p.status === 'skip' || p.status === 'extra' ? '' : 'warn'}">${p.status === 'done' ? 'placed ✓' : p.status === 'skip' ? 'skipped' : p.depthState === 'running' ? 'finding ground…' : 'to place'}</small></div></div>`));
   t.push(`<div class="tab ${S.tab === 'plan' ? 'on' : ''}" data-t="plan"><div class="ic">🗺</div><div>Site plan<small class="${S.spots.A ? 'ok' : ''}">${S.spots.A ? 'spot A set' : 'optional'}</small></div></div>`);
   $('tabs').innerHTML = t.join('');
   $('tabs').querySelectorAll('.tab').forEach((el) => el.onclick = () => openTab(el.dataset.t === 'plan' ? 'plan' : +el.dataset.t));
@@ -383,8 +383,17 @@ async function exifFov(p) {
   try { const exifr = (await import('https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.esm.mjs')).default; const x = await exifr.parse(p.file, ['FocalLengthIn35mmFormat']);
     const f35 = x && x.FocalLengthIn35mmFormat; return f35 ? 2 * Math.atan(36 / (2 * f35)) * 180 / Math.PI : null; } catch (e) { return null; }
 }
+async function analyseOne(p) {
+  p.depthState = 'running'; renderTabs(); if (S.tab === p.i) photo3d.busy('Finding the ground…');
+  try { const fov = await exifFov(p); if (fov) p.hfov = Math.round(fov);
+    const dp = await getDepth(); const r = await dp(p.url); const h = horizonFrom(r.predicted_depth);
+    p.auto = h; if (p.horizon == null) p.horizon = h != null ? h : 0.42; p.depthState = h != null ? 'done' : 'manual';
+  } catch (e) { console.warn('depth failed', e); p.depthState = 'manual'; if (p.horizon == null) p.horizon = 0.42; }
+  renderTabs(); if (S.tab === p.i) photo3d.open(p);
+}
 async function analysePhotos() {
   for (const p of S.photos) {
+    if (p.status === 'extra') { p.depthState = 'manual'; continue; }
     p.depthState = 'running'; renderTabs(); if (S.tab === p.i) photo3d.busy('Finding the ground…');
     try {
       const fov = await exifFov(p); if (fov) p.hfov = Math.round(fov);
@@ -477,7 +486,8 @@ const photo3d = (() => {
     }
     hint(); draw();
   }
-  function hint() { $('photoHint').textContent = !cur ? '' : cur.depthState === 'running' || cur.depthState === 'waiting' ? 'Finding the ground in this photo…' : cur.status === 'done' ? 'Placed. Change anything, or open the next photo.' : 'Drag the greenhouse into place, then press "Looks right"'; }
+  function hint() { if (cur && cur.status === 'extra') { $('photoHint').innerHTML = 'Extra photo: not sent to the AI. <button type="button" id="useExtra" style="margin-left:8px">Use this photo</button>'; $('useExtra').onclick = () => { cur.status = 'todo'; cur.depthState = 'waiting'; renderTabs(); checks(); analyseOne(cur); hint(); }; return; }
+    $('photoHint').textContent = !cur ? '' : cur.depthState === 'running' || cur.depthState === 'waiting' ? 'Finding the ground in this photo…' : cur.status === 'done' ? 'Placed. Change anything, or open the next photo.' : 'Drag the greenhouse into place, then press "Looks right"'; }
   // interaction
   let drag = null;
   function ndc(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; }
@@ -546,7 +556,7 @@ function nextTab() { const n = S.photos.find((p) => p.status === 'todo'); openTa
 
 /* ======================= checklist + submit ======================= */
 function checks() {
-  const items = [...S.photos.map((p, i) => [`Photo ${i + 1} ${p.status === 'skip' ? 'skipped' : 'placed'}`, p.status !== 'todo']), ['Site plan spot A (optional)', true]];
+  const items = [...S.photos.filter((p) => p.status !== 'extra').map((p, i) => [`Photo ${p.i + 1} ${p.status === 'skip' ? 'skipped' : 'placed'}`, p.status !== 'todo']), [`${S.photos.filter((p) => p.status === 'extra').length} extra photo(s) not sent to the AI`, true], ['Site plan spot A (optional)', true]];
   if (!S.photos.length) items.push(['No photos in this request', true]);
   $('checks').innerHTML = items.map(([t, ok]) => `<div class="check ${ok ? 'ok' : ''}"><span class="d"></span>${esc(t)}</div>`).join('');
   const ready = items.every(([, ok]) => ok) && S.photos.some((p) => p.status === 'done') && !!PRODUCTS[S.product].glb;
