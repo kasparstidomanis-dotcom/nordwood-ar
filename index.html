@@ -249,6 +249,14 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   .oob__alt{margin:12px 0 6px;font-size:13px;opacity:.85}.oob__copy{display:flex;gap:6px}
   .oob__copy input{flex:1;min-width:0;font:inherit;font-size:13px;padding:9px 10px;border:1px solid #e3d3a8;border-radius:10px;background:#fff}
   .oob__copy button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:0 14px;background:#1d2a20;color:#fff}
+
+  /* phones: carousel arrows sit under the cards (same fix as the live nvr-reasons section), never over the text */
+  @media (max-width:749px){
+    .car{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 14px}
+    .car__track{order:1;flex:0 0 100%;width:100%}
+    .car__btn{order:2;position:static;margin:0;width:44px;height:44px}
+    .car__btn[disabled]{opacity:.35;pointer-events:none}
+  }
 </style>
 </head>
 <body>
