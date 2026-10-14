@@ -131,11 +131,11 @@ const FT = 0.3048;
 // footprints in metres (wall outlines from the spec sheets / official plan). x = across, y = along. Plan only.
 const T_BODY = 9.84 * FT, T_LEN = 17.80 * FT, T_WING = (13.82 - 9.84) * FT, T_WLEN = 9.84 * FT, T_W0 = (T_LEN - T_WLEN) / 2;
 const PRODUCTS = {
-  tshape:   { name: 'Nordwood Greenhouse (T-shape)', glb: 'nordwood-greenhouse.glb', w: 13.82 * FT, h: T_LEN, size: "17'10\" x 13'10\"",
+  tshape:   { name: 'Nordwood Greenhouse (T-shape)', glb: 'nordwood-tshape.glb', w: 13.82 * FT, h: T_LEN, size: "17'10\" x 13'10\"",
               outline: [[T_WING, 0], [13.82 * FT, 0], [13.82 * FT, T_LEN], [T_WING, T_LEN], [T_WING, T_W0 + T_WLEN], [0, T_W0 + T_WLEN], [0, T_W0], [T_WING, T_W0]] },
   classic:  { name: 'Nordwood Classic', glb: 'nordwood-classic.glb', w: 9.84 * FT, h: 15.81 * FT, size: "15'10\" x 9'10\"" },
   arrow:    { name: 'Nordwood Arrow', glb: 'nordwood-arrow.glb', w: 7.87 * FT, h: 11.91 * FT, size: "11'11\" x 7'10\"" },
-  'arrow-mini': { name: 'Nordwood Arrow Mini', glb: 'nordwood-arrow.glb', zscale: 8 / 11.91, w: 7.87 * FT, h: 8 * FT, size: "8' x 7'10\"" },   // the Arrow model shortened to 8 ft until the real model arrives
+  'arrow-mini': { name: 'Nordwood Arrow Mini', glb: 'nordwood-arrow-mini.glb', w: 7.87 * FT, h: 8 * FT, size: "8' x 7'10\"" },
 };
 const outlineOf = (p) => p.outline || [[0, 0], [p.w, 0], [p.w, p.h], [0, p.h]];
 const S = {
