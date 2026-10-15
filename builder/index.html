@@ -186,7 +186,7 @@ $('product').onchange = () => { S.product = $('product').value; drawPlan(); if (
 function renderTabs() {
   const t = [];
   S.photos.forEach((p, i) => t.push(`<div class="tab ${S.tab === i ? 'on' : ''}" data-t="${i}"><img src="${esc(p.url)}" alt=""><div>Photo ${i + 1}<small class="${p.status === 'done' ? 'ok' : p.status === 'skip' || p.status === 'extra' ? '' : 'warn'}">${p.status === 'done' ? 'placed ✓' : p.status === 'skip' ? 'skipped' : p.status === 'extra' ? 'extra (not sent to AI)' : p.depthState === 'running' ? 'finding ground…' : 'to place'}</small></div></div>`));
-  t.push(`<div class="tab ${S.tab === 'plan' ? 'on' : ''}" data-t="plan"><div class="ic">🗺</div><div>Site plan<small class="${S.spots.A ? 'ok' : ''}">${S.spots.A ? 'spot A set' : 'optional'}</small></div></div>`);
+  if (window.__SHOW_PLAN_TAB) t.push(`<div class="tab ${S.tab === 'plan' ? 'on' : ''}" data-t="plan"><div class="ic">🗺</div><div>Site plan<small class="${S.spots.A ? 'ok' : ''}">${S.spots.A ? 'spot A set' : 'optional'}</small></div></div>`);
   $('tabs').innerHTML = t.join('');
   $('tabs').querySelectorAll('.tab').forEach((el) => el.onclick = () => openTab(el.dataset.t === 'plan' ? 'plan' : +el.dataset.t));
 }
@@ -557,7 +557,7 @@ function nextTab() { const n = S.photos.find((p) => p.status === 'todo'); openTa
 
 /* ======================= checklist + submit ======================= */
 function checks() {
-  const items = [...S.photos.filter((p) => p.status !== 'extra').map((p, i) => [`Photo ${p.i + 1} ${p.status === 'skip' ? 'skipped' : 'placed'}`, p.status !== 'todo']), ...(S.photos.some((p) => p.status === 'extra') ? [[`${S.photos.filter((p) => p.status === 'extra').length} extra photo(s) not sent to the AI`, true]] : []), ['Site plan spot A (optional)', true]];
+  const items = [...S.photos.filter((p) => p.status !== 'extra').map((p, i) => [`Photo ${p.i + 1} ${p.status === 'skip' ? 'skipped' : 'placed'}`, p.status !== 'todo']), ...(S.photos.some((p) => p.status === 'extra') ? [[`${S.photos.filter((p) => p.status === 'extra').length} extra photo(s) not sent to the AI`, true]] : [])];
   if (!S.photos.length) items.push(['No photos in this request', true]);
   $('checks').innerHTML = items.map(([t, ok]) => `<div class="check ${ok ? 'ok' : ''}"><span class="d"></span>${esc(t)}</div>`).join('');
   const ready = items.every(([, ok]) => ok) && S.photos.some((p) => p.status === 'done') && !!PRODUCTS[S.product].glb;
