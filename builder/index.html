@@ -560,9 +560,9 @@ function checks() {
   const items = [...S.photos.filter((p) => p.status !== 'extra').map((p, i) => [`Photo ${p.i + 1} ${p.status === 'skip' ? 'skipped' : 'placed'}`, p.status !== 'todo']), ...(S.photos.some((p) => p.status === 'extra') ? [[`${S.photos.filter((p) => p.status === 'extra').length} extra photo(s) not sent to the AI`, true]] : [])];
   if (!S.photos.length) items.push(['No photos in this request', true]);
   $('checks').innerHTML = items.map(([t, ok]) => `<div class="check ${ok ? 'ok' : ''}"><span class="d"></span>${esc(t)}</div>`).join('');
-  const ready = items.every(([, ok]) => ok) && S.photos.some((p) => p.status === 'done') && !!PRODUCTS[S.product].glb;
+  const ready = items.every(([, ok]) => ok) && !!PRODUCTS[S.product].glb; const none = ready && !S.photos.some((p) => p.status === 'done');
   $('submitBtn').disabled = !ready || S.submitted; $('submitBtn').classList.toggle('done', !!S.submitted); $('submitBtn').textContent = S.submitted ? '✓ Submitted' : 'Submit for AI images';
-  $('submitNote').textContent = S.submitted ? 'Submitted.' : ready ? 'Ready: submit sends the placed photos to the AI (3 versions each, about a minute per photo).' : 'Place the greenhouse in every photo (or skip it) to submit.';
+  $('submitNote').textContent = S.submitted ? 'Submitted.' : none ? 'No photo placed: submit moves this to Verify & send as a plan-only review (site plan + 3D model, no yard photos).' : ready ? 'Ready: submit sends the placed photos to the AI (3 versions each, about a minute per photo).' : 'Place the greenhouse in every photo (or skip it) to submit.';
 }
 function planSnapshot() {   // the plan as the team placed it, at 1600 px, for the PDF
   const prev = { ...S.view, PW, PH, DPR }; PW = PH = 1600 / 2; DPR = 2; pc.width = pc.height = 1600;

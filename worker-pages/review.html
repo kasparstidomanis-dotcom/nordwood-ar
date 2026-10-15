@@ -14,8 +14,10 @@
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px}
   .card h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--g2);margin:0 0 8px}
   .vers{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
-  .v{position:relative;border:3px solid transparent;border-radius:10px;overflow:hidden;cursor:pointer;background:#e8ece8;aspect-ratio:4/3}
-  .v img{width:100%;height:100%;object-fit:cover;display:block} .v.on{border-color:var(--g2)} .v .tag{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:2px 8px;border-radius:999px}
+  .v{position:relative;border:3px solid transparent;border-radius:10px;overflow:hidden;cursor:pointer;background:#e8ece8;aspect-ratio:var(--ar,4/3)}   /* the row's frame + focus: what the customer will see */
+  .v img{width:100%;height:100%;object-fit:cover;object-position:50% var(--pos,55%);transform:scale(var(--z,1));transform-origin:50% var(--pos,55%);display:block}
+  .v .big{position:absolute;right:6px;top:6px;width:28px;height:28px;padding:0;border-radius:8px;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:28px;text-align:center} .v .big:hover{background:rgba(0,0,0,.85)}
+  .vers.skipped{opacity:.4} .lb{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;place-items:center;z-index:50;cursor:zoom-out} .lb.on{display:grid} .lb img{max-width:92vw;max-height:88vh;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)} .v.on{border-color:var(--g2)} .v .tag{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:2px 8px;border-radius:999px}
   .v.on .tag{background:var(--g2)} .v.orig .tag{background:#555} .v.wait{display:grid;place-items:center;color:var(--mut);font-weight:600}
   .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 0}
   label{font-weight:600;font-size:12.5px} select,input[type=text],textarea{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:7px;width:100%} textarea{min-height:70px}
@@ -39,62 +41,83 @@
       <p class="mut small" style="margin:8px 0 0">Send = the customer gets the "your review is ready" email (Klaviyo) with their link, and HubSpot gets a note. You can reopen and change it afterwards; the link stays the same.</p></div>
   </section>
   <aside><div class="mock card"><h2>How the customer sees it (phone)</h2><div class="phone"><iframe id="frame" title="Customer page preview"></iframe></div><p class="mut small" id="linkLine" style="margin:8px 0 0"></p></div></aside>
+<div class="lb" id="lb"><img id="lbImg" alt=""></div>
 </main>
 <script>
 const B = window.__BACKYARD__; const $ = (id) => document.getElementById(id);
 const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const api = (path, opt) => fetch(`${B.base}/${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(B.key)}`, opt);
 $('who').textContent = `${B.name} · ${B.models[B.product] || B.product}`; $('backLink').href = B.listUrl; $('expert').value = B.expert || 'Kaspar';
-let PKG = null, GEN = { jobs: [] }, pick = {}, frame = {}, focus = {}, RES = null, planReady = false;
+let PKG = null, GEN = { jobs: [] }, pick = {}, frame = {}, focus = {}, zoom = {}, skip = {}, RES = null, planReady = false;
 async function load() {
-  if (!PKG) { const r = await api('package'); if (r.ok) PKG = await r.json(); }
+  if (!PKG) { const r = await api('package'); if (r.ok) PKG = await r.json(); else PKG = { product: B.product, photos: [], plan: null, notes: {}, none: true }; }   // no package = 0 photos: plan-only review
   const g = await (await api('gen')).json(); GEN = g; planReady = g.planart;
   $('st').textContent = g.status === 'generating' ? 'generating images…' : g.status;
   render();
   if (g.jobs.some((j) => j.status === 'pending' || j.status === 'running') || g.gen_pending) setTimeout(load, 8000);
 }
+function rowStyle(p) { const f = frame[p.index], ar = f === '4:5' ? '4/5' : f === '1:1' ? '1/1' : f === '4:3' ? '4/3' : (p.w && p.h ? p.w + '/' + p.h : '4/3'); return `--ar:${ar};--pos:${Math.round((focus[p.index] ?? 0.55) * 100)}%;--z:${zoom[p.index] || 1}`; }
+function restyle(i) { const p = PKG.photos.find((x) => String(x.index) === String(i)), row = document.querySelector(`[data-row="${i}"]`); if (p && row) { row.style.cssText = rowStyle(p); row.classList.toggle('skipped', !!skip[i]); } }
 function autoFrame(w, h) { return h / w > 1.25 ? '4:5' : h / w > 0.95 ? '1:1' : 'natural'; }
 function render() {
-  if (!PKG) { $('photos').innerHTML = '<p class="mut">No package yet: the greenhouse has not been placed in the photos. Open the builder first.</p>'; return; }
   const placed = PKG.photos.filter((p) => p.status === 'done' && p.composite);
+  const unbuilt = PKG.none && (B.photoCount || 0) > 0;   // photos exist but the builder was never submitted
+  if (unbuilt) $('photos').innerHTML = '<p class="mut">This request has ' + B.photoCount + ' photo(s) but the greenhouse has not been placed yet. Open the builder first (skip a photo there if it is unusable).</p>';
+  else if (!placed.length) $('photos').innerHTML = '<p class="mut">' + (PKG.none ? 'No photos in this request.' : 'No photo was placed in the builder (all skipped).') + ' Approve sends the plan-only review: site plan, 3D model and the model pages, no yard photos.</p>';
   if (!$('note').value) $('note').value = (PKG.notes && (PKG.notes.A || PKG.notes.closing)) ? [PKG.notes.A, PKG.notes.closing].filter(Boolean).join(' ') : '';
-  $('photos').innerHTML = placed.map((p) => {
+  if (placed.length) $('photos').innerHTML = placed.map((p) => {
     const jobs = GEN.jobs.filter((j) => j.kind === 'photo' && j.photo === p.index);
     if (!(p.index in frame)) frame[p.index] = autoFrame(p.w, p.h);
     if (!(p.index in focus)) focus[p.index] = p.focusY != null ? p.focusY : 0.55;
-    const vers = jobs.map((j) => j.status === 'done' ? `<div class="v ${pick[p.index] === j.k ? 'on' : ''}" data-p="${p.index}" data-k="${j.k}"><img src="${B.base}/gi/${j.k}?key=${encodeURIComponent(B.key)}" alt=""><span class="tag">${pick[p.index] === j.k ? 'Chosen' : 'Version ' + j.v}</span></div>`
+    if (!(p.index in zoom)) zoom[p.index] = 1;
+    const vers = jobs.map((j) => j.status === 'done' ? `<div class="v ${pick[p.index] === j.k ? 'on' : ''}" data-p="${p.index}" data-k="${j.k}"><img src="${B.base}/gi/${j.k}?key=${encodeURIComponent(B.key)}" alt=""><span class="tag">${pick[p.index] === j.k ? 'Chosen' : 'Version ' + j.v}</span><button class="big" data-big="${B.base}/gi/${j.k}?key=${encodeURIComponent(B.key)}" title="View large">&#x2922;</button></div>`
       : `<div class="v wait"><span class="tag">Version ${j.v}</span>${j.status === 'error' ? '<span class="err">Failed: ' + esc(j.err) + '</span>' : (j.status === 'running' ? 'Generating… (30 s)' : 'Waiting…')}</div>`).join('');
     return `<div style="margin:0 0 16px"><div class="row" style="margin:0 0 6px"><b>Photo ${p.index + 1}</b><span class="mut small">${p.w && p.h ? p.w + ' × ' + p.h : ''}</span><span class="sp" style="flex:1"></span>
       <label class="small">Frame <select data-frame="${p.index}"><option value="natural"${frame[p.index] === 'natural' ? ' selected' : ''}>As taken</option><option value="4:5"${frame[p.index] === '4:5' ? ' selected' : ''}>Tall 4:5</option><option value="1:1"${frame[p.index] === '1:1' ? ' selected' : ''}>Square</option><option value="4:3"${frame[p.index] === '4:3' ? ' selected' : ''}>4:3</option></select></label>
       <label class="small">Focus <input type="range" data-focus="${p.index}" min="0" max="1" step="0.02" value="${focus[p.index]}" style="width:110px"></label>
-      <button data-regen="${p.index}" class="small">3 more versions</button></div>
-      <div class="vers"><div class="v orig"><img src="${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}" alt=""><span class="tag">Original (before)</span></div>${vers}</div></div>`;
+      <label class="small">Zoom <input type="range" data-zoom="${p.index}" min="1" max="2.5" step="0.05" value="${zoom[p.index]}" style="width:110px"></label>
+      <button data-regen="${p.index}" class="small">3 more versions</button><button data-skip="${p.index}" class="small${skip[p.index] ? ' danger' : ''}">${skip[p.index] ? 'Skipped: include again' : 'Skip this photo'}</button></div>
+      <div class="vers${skip[p.index] ? ' skipped' : ''}" data-row="${p.index}" style="${rowStyle(p)}"><div class="v orig"><img src="${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}" alt=""><span class="tag">Original (before)</span><button class="big" data-big="${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}" title="View large">&#x2922;</button></div>${vers}</div></div>`;
   }).join('') || '<p class="mut">No placed photos in the package.</p>';
+  // photos the customer sent that were not placed (extras beyond the AI default, or skipped in the builder)
+  const extras = PKG.photos.filter((p) => !(p.status === 'done' && p.composite));
+  if (extras.length) $('photos').innerHTML += `<div style="margin:0 0 8px"><div class="row" style="margin:0 0 6px"><b>Extra customer photos</b><span class="mut small">${extras.length} not sent to the AI. To use one, open it in the builder, press "Use this photo", place the greenhouse and submit again.</span><a href="${B.base}/build?key=${encodeURIComponent(B.key)}" style="margin-left:auto">Open the builder</a></div>
+    <div class="vers">${extras.map((p) => `<div class="v orig" style="--ar:4/3;cursor:default"><img src="${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}" alt=""><span class="tag">Photo ${p.index + 1}${p.status === 'skip' ? ' (skipped)' : p.status === 'extra' ? ' (extra)' : ''}</span><button class="big" data-big="${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}" title="View large">&#x2922;</button></div>`).join('')}</div></div>`;
   $('photos').querySelectorAll('.v[data-k]').forEach((el) => el.onclick = () => { pick[el.dataset.p] = el.dataset.k; render(); });
-  $('photos').querySelectorAll('[data-frame]').forEach((el) => el.onchange = () => { frame[el.dataset.frame] = el.value; });
-  $('photos').querySelectorAll('[data-focus]').forEach((el) => el.oninput = () => { focus[el.dataset.focus] = +el.value; });
+  $('photos').querySelectorAll('[data-frame]').forEach((el) => el.onchange = () => { frame[el.dataset.frame] = el.value; restyle(el.dataset.frame); });
+  $('photos').querySelectorAll('[data-focus]').forEach((el) => el.oninput = () => { focus[el.dataset.focus] = +el.value; restyle(el.dataset.focus); });
+  $('photos').querySelectorAll('[data-zoom]').forEach((el) => el.oninput = () => { zoom[el.dataset.zoom] = +el.value; restyle(el.dataset.zoom); schedulePreview(); });
+  $('photos').querySelectorAll('[data-focus]').forEach((el) => el.onchange = () => schedulePreview());
+  $('photos').querySelectorAll('[data-frame]').forEach((el) => el.addEventListener('change', () => schedulePreview()));
+  $('photos').querySelectorAll('[data-skip]').forEach((el) => el.onclick = () => { skip[el.dataset.skip] = !skip[el.dataset.skip]; render(); });
+  $('photos').querySelectorAll('[data-big]').forEach((el) => el.onclick = (e) => { e.stopPropagation(); $('lbImg').src = el.dataset.big; $('lb').classList.add('on'); });
   $('photos').querySelectorAll('[data-regen]').forEach((el) => el.onclick = async () => { el.disabled = true; await api('regen', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photo: +el.dataset.regen }) }); setTimeout(load, 1500); });
-  // auto-pick the first finished version so the preview works straight away
+  // auto-pick the first finished version so the preview works straight away, then build the phone preview by itself
   for (const p of placed) if (!pick[p.index]) { const j = GEN.jobs.find((x) => x.kind === 'photo' && x.photo === p.index && x.status === 'done'); if (j) pick[p.index] = j.k; }
   const planJob = GEN.jobs.find((j) => j.kind === 'plan');
   $('planImg').src = planReady ? `${B.planArtUrl}&t=${Date.now()}` : ''; $('planImg').style.display = planReady ? 'block' : 'none';
   $('planGen').textContent = planReady ? '' : planJob ? (planJob.status === 'error' ? 'Plan failed: ' + planJob.err : 'Drawing the plan… about 30 s') : 'No plan yet. Press Redraw.';
-  const allPicked = placed.length && placed.every((p) => pick[p.index]);
-  $('approveBtn').disabled = !allPicked;
+  if (placed.some((p) => pick[p.index])) schedulePreview();
+  // send needs at least one photo chosen; photos without a good version can be skipped
+  const usable = placed.filter((p) => !skip[p.index]);
+  $('approveBtn').disabled = unbuilt || (usable.length > 0 && !usable.some((p) => pick[p.index]));   // nothing usable = plan-only review, allowed
 }
 $('redrawPlan').onclick = async () => { $('redrawPlan').disabled = true; await api('regen', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photo: 'plan' }) }); planReady = false; setTimeout(() => { $('redrawPlan').disabled = false; load(); }, 1500); };
 function resultObject(draft) {
-  const placed = PKG.photos.filter((p) => p.status === 'done' && p.composite && pick[p.index]);
+  const placed = PKG.photos.filter((p) => p.status === 'done' && p.composite && pick[p.index] && !skip[p.index]);
   return { v: 2, product: PKG.product, expert: $('expert').value.trim(), note: $('note').value.trim(),
-    photos: placed.map((p, n) => ({ n, index: p.index, w: p.w, h: p.h, frame: frame[p.index], focusY: focus[p.index],
-      src: draft ? `${B.base}/gi/${pick[p.index]}?key=${encodeURIComponent(B.key)}` : `final-${n}.jpg`, before: draft ? `${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}` : `before-${p.index}.jpg` })),
+    photos: placed.map((p, n) => (draft ? { n, index: p.index, w: p.w, h: p.h, frame: frame[p.index], focusY: focus[p.index], zoom: zoom[p.index] || 1, src: `${B.base}/gi/${pick[p.index]}?key=${encodeURIComponent(B.key)}`, before: `${B.base}/photo/${p.index}?key=${encodeURIComponent(B.key)}` }
+      : { n, index: p.index, w: (p.crop || {}).w || p.w, h: (p.crop || {}).h || p.h, frame: 'natural', focusY: 0.5, zoom: 1, src: `final-${n}.jpg`, before: `before-${n}.jpg` })),   // final files are cropped already
     plan: { zoom: 19, spot: PKG.plan && PKG.plan.spots && PKG.plan.spots.A ? PKG.plan.spots.A : null, lat: PKG.plan && PKG.plan.lat, lng: PKG.plan && PKG.plan.lng, hasArt: planReady } };
 }
+let __pt = null, __lastKey = '';
+function schedulePreview() { clearTimeout(__pt); __pt = setTimeout(() => { const k = JSON.stringify([pick, frame, focus, zoom, skip]); if (k === __lastKey) return; __lastKey = k; $('previewBtn').onclick(); }, 900); }
 $('previewBtn').onclick = async () => {
   if (!PKG) return; $('msg').textContent = 'Updating…';
   const r = await api('draft', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(resultObject(true)) });
   $('msg').textContent = r.ok ? '' : 'Preview failed';
-  $('frame').src = `/r/${B.token}?draft=1&key=${encodeURIComponent(B.key)}&t=${Date.now()}`;
+  $('frame').src = `/r/${B.token}?draft=1&only=yard&key=${encodeURIComponent(B.key)}&t=${Date.now()}`;
+  $('linkLine').innerHTML = `The photo pages as the customer gets them. <a href="/r/${B.token}?draft=1&key=${encodeURIComponent(B.key)}&t=${Date.now()}" target="_blank">Open the whole page</a> in a new tab.`;
 };
 // paste the chosen AI version back into the original photo through the greenhouse mask, so everything outside the greenhouse is the real photo
 async function loadImg(src) { const im = new Image(); im.crossOrigin = 'anonymous'; await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = src; }); return im; }
@@ -108,20 +131,29 @@ async function finalJpeg(p) {
   const layer = document.createElement('canvas'); layer.width = W; layer.height = H; const lx = layer.getContext('2d');
   lx.drawImage(gen, (W - gw) / 2, (H - gh) / 2, gw, gh); lx.globalCompositeOperation = 'destination-in'; lx.drawImage(m, 0, 0);
   x.drawImage(orig, 0, 0, W, H); x.drawImage(layer, 0, 0);
-  return new Promise((res) => c.toBlob(res, 'image/jpeg', 0.9));
+  // crop both to the chosen frame, focus and zoom, so every customer page shows the same picture
+  const f = frame[p.index], ar = f === '4:5' ? 4 / 5 : f === '1:1' ? 1 : f === '4:3' ? 4 / 3 : W / H, z = zoom[p.index] || 1;
+  let cw = Math.min(W, H * ar), ch = cw / ar; cw /= z; ch /= z;
+  const cx = W / 2, cy = Math.min(H - ch / 2, Math.max(ch / 2, (focus[p.index] ?? 0.55) * H)), sx = Math.round(cx - cw / 2), sy = Math.round(cy - ch / 2); cw = Math.round(cw); ch = Math.round(ch);
+  p.crop = { w: cw, h: ch };
+  const cut = (src) => { const o = document.createElement('canvas'); o.width = cw; o.height = ch; o.getContext('2d').drawImage(src, sx, sy, cw, ch, 0, 0, cw, ch); return new Promise((res) => o.toBlob(res, 'image/jpeg', 0.9)); };
+  const b4 = document.createElement('canvas'); b4.width = W; b4.height = H; b4.getContext('2d').drawImage(orig, 0, 0, W, H);
+  return { final: await cut(c), before: await cut(b4) };
 }
 $('approveBtn').onclick = async () => {
   if (!confirm('Send this review to the customer now?')) return;
   $('approveBtn').disabled = true; $('msg').textContent = 'Preparing the final images…';
   try {
     const res = resultObject(false), fd = new FormData(); fd.append('result', JSON.stringify(res));
-    for (const p of res.photos) fd.append('file', await finalJpeg(PKG.photos.find((q) => q.index === p.index)), `final-${p.n}.jpg`);
+    for (const p of res.photos) { const q = PKG.photos.find((x) => x.index === p.index), out = await finalJpeg(q); fd.append('file', out.final, `final-${p.n}.jpg`); fd.append('file', out.before, `before-${p.n}.jpg`); p.w = q.crop.w; p.h = q.crop.h; }
+    fd.set('result', JSON.stringify(res));
     $('msg').textContent = 'Sending…';
     const r = await api('approve', { method: 'POST', body: fd }); const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
     $('msg').innerHTML = `<span class="ok">Sent. Customer link: <a href="${esc(j.link)}" target="_blank">${esc(j.link)}</a></span>${j.warn ? ' <span class="err">' + esc(j.warn) + '</span>' : ''}`;
-    $('frame').src = j.link + '?t=' + Date.now(); $('st').textContent = 'sent';
+    $('frame').src = j.link + '?only=yard&t=' + Date.now(); $('st').textContent = 'sent';
   } catch (e) { $('msg').innerHTML = '<span class="err">Could not send: ' + esc(e.message) + '</span>'; $('approveBtn').disabled = false; }
 };
+$('lb').onclick = () => $('lb').classList.remove('on'); document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('lb').classList.remove('on'); });
 load();
 </script></body></html>
