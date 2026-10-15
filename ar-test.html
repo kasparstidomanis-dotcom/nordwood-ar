@@ -96,7 +96,7 @@ h1 em{font-family:var(--ygh-font-highlight);font-style:normal;font-weight:800;ba
     heritage:   { src: 'nordwood.glb',            ios: null,                       name: 'Heritage Nord' }
   };
   var ALIAS = { 'arrow-mini': 'arrowMini', mini: 'arrowMini', tshape: 'greenhouse' };
-  var BASE = ['greenhouse', 'classic', 'arrow', 'arrowMini', 'heritage'];
+  var BASE = ['greenhouse', 'classic', 'arrow', 'arrowMini'];
   /* ?model= puts their match first; the others follow in the usual order */
   var want = new URLSearchParams(location.search).get('model') || '';
   want = ALIAS[want] || want;
