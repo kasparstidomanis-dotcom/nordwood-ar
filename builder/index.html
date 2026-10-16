@@ -192,8 +192,9 @@ function renderTabs() {
 }
 function openTab(t) {
   S.tab = t; renderTabs();
-  $('planView').hidden = t !== 'plan'; $('photoView').hidden = t === 'plan'; $('planCard').hidden = t !== 'plan';
-  if (t === 'plan') { sizePlan(); drawPlan(); } else photo3d.open(S.photos[t]);
+  if (t === 'plan') return;   // the plan stage is gone: the customer places the footprint on their own page
+  $('planView').hidden = true; $('photoView').hidden = false; $('planCard').hidden = true;
+  photo3d.open(S.photos[t]);
 }
 
 /* ======================= site plan ======================= */
@@ -553,7 +554,9 @@ const photo3d = (() => {
   return { open, resize, busy, rotate: rotateBy, refresh: draw, ensureModel, exportShot };
 })();
 async function loadModel() { await photo3d.ensureModel(); }
-function nextTab() { const n = S.photos.find((p) => p.status === 'todo'); openTab(n ? n.i : 'plan'); if (!n) $('planHint').textContent = 'Optional: click where you would put it (spot A). The customer can move it on their page.'; }
+function nextTab() {   // no site-plan stage any more (Rai 10-17): after the last photo the package submits itself
+  const n = S.photos.find((p) => p.status === 'todo'); if (n) { openTab(n.i); return; }
+  checks(); if (!S.submitted && !$('submitBtn').disabled) { $('submitNote').textContent = 'All photos done: submitting…'; setTimeout(() => $('submitBtn').click(), 400); } }
 
 /* ======================= checklist + submit ======================= */
 function checks() {
