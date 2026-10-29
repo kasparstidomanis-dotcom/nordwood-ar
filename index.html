@@ -244,7 +244,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   .opt{font-size:16px;padding:15px}
 }
 </style>
-<script src="ar-fallback.js?v=3"></script>
+<script src="ar-fallback.js?v=4"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -694,10 +694,10 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       // official floor area per model, in sq ft. Fill these in from the spec sheet; a model left at null shows no size line.
       var SQFT = { greenhouse: 206, classic: 148, arrow: 88, arrowMini: 58, heritage: 174 };
       var MODELS = {
-        greenhouse: { src: 'models/nordwood-tshape.glb',     ios: 'models/nordwood-tshape.usdz',     name: 'Nordwood Greenhouse' },
-        arrow:      { src: 'models/nordwood-arrow.glb',      ios: 'models/nordwood-arrow.usdz',      name: 'Nordwood Arrow' },
-        classic:    { src: 'models/nordwood-classic.glb',    ios: 'models/nordwood-classic.usdz',    name: 'Nordwood Classic' },
-        arrowMini:  { src: 'models/nordwood-arrow-mini.glb', ios: 'models/nordwood-arrow-mini.usdz', name: 'Nordwood Arrow Mini' },
+        greenhouse: { src: 'models/nordwood-tshape-sv.glb',     ios: 'models/nordwood-tshape.usdz',     name: 'Nordwood Greenhouse' },
+        arrow:      { src: 'models/nordwood-arrow-sv.glb',      ios: 'models/nordwood-arrow.usdz',      name: 'Nordwood Arrow' },
+        classic:    { src: 'models/nordwood-classic-sv.glb',    ios: 'models/nordwood-classic.usdz',    name: 'Nordwood Classic' },
+        arrowMini:  { src: 'models/nordwood-arrow-mini-sv.glb', ios: 'models/nordwood-arrow-mini.usdz', name: 'Nordwood Arrow Mini' },
         heritage:   { src: 'nordwood.glb',            ios: null,                       name: 'Heritage Nord' }
       };
       var ftin = function (m) { var t = Math.round(m / 0.0254); return Math.floor(t / 12) + '\u2032 ' + (t % 12) + '\u2033'; };

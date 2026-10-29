@@ -56,4 +56,19 @@
     d.querySelector('button').onclick = function () { d.hidden = true; };
     document.body.appendChild(d);
   }
+  /* Android backup: if Google's viewer won't open, run AR inside Chrome instead */
+  window.nwARBackup = function (mv) {
+    mv.setAttribute('ar-modes', 'webxr');
+    setTimeout(function () { if (mv.canActivateAR) mv.activateAR(); else sceneViewer(mv.getAttribute('src'), mv.alt); }, 300);
+  };
+  if (isAndroid) document.addEventListener('DOMContentLoaded', function () {
+    var go = document.getElementById('arGo'), mv = document.getElementById('mv');
+    if (!go || !mv) return;
+    var a = document.createElement('button');
+    a.type = 'button';
+    a.textContent = "Didn't open? Try the backup viewer";
+    a.style.cssText = 'display:block;margin:12px auto 0;background:none;border:0;color:inherit;font:600 15px/1.3 inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;opacity:.85';
+    a.onclick = function () { nwARBackup(mv); };
+    go.insertAdjacentElement('afterend', a);
+  });
 })();
