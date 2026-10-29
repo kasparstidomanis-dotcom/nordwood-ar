@@ -244,6 +244,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
   .opt{font-size:16px;padding:15px}
 }
 </style>
+<script src="ar-fallback.js?v=3"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -474,10 +475,10 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       <p class="dnote" id="dNote"></p>
       <div class="arv" id="arv">
         <model-viewer id="mv" alt="The Nordwood greenhouse, at real size"
-          ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor"
+          ar ar-modes="scene-viewer webxr quick-look" ar-scale="fixed" ar-placement="floor"
           camera-controls touch-action="pan-y" auto-rotate rotation-per-second="14deg" interaction-prompt="none"
           camera-orbit="35deg 72deg auto" max-camera-orbit="auto 88deg auto"
-          shadow-intensity="1" shadow-softness="0.8" exposure="1.05" tone-mapping="neutral" environment-image="nordwood-sky.hdr">
+          shadow-intensity="1" shadow-softness="0.8" exposure="1.05" tone-mapping="neutral" environment-image="neutral">
           <span slot="ar-button" hidden></span>
         </model-viewer>
         <button type="button" class="mnav mnav--prev" id="mPrev" aria-label="Previous model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -675,7 +676,7 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
     var mv = document.getElementById('mv');
     if (!mv.src) {
       mv.addEventListener('load', function () {
-        if (!mv.canActivateAR) {
+        if (!mv.canActivateAR && !nwMobile()) {
           document.getElementById('arHint').lastChild.textContent = 'Open on your phone to place it';
           document.getElementById('arGo').hidden = true;
         }
@@ -687,16 +688,16 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
         var moved = down ? Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) : 0;
         down = null;
         var inAR = mv.getAttribute('ar-status') && mv.getAttribute('ar-status') !== 'not-presenting';
-        if (moved < 10 && mv.canActivateAR && !inAR) mv.activateAR();
+        if (moved < 10 && !inAR) nwAR(mv);
       });
-      document.getElementById('arGo').addEventListener('click', function () { if (mv.canActivateAR) mv.activateAR(); });
+      document.getElementById('arGo').addEventListener('click', function () { nwAR(mv); });
       // official floor area per model, in sq ft. Fill these in from the spec sheet; a model left at null shows no size line.
       var SQFT = { greenhouse: 206, classic: 148, arrow: 88, arrowMini: 58, heritage: 174 };
       var MODELS = {
-        greenhouse: { src: 'nordwood-tshape.glb',     ios: 'nordwood-tshape.usdz',     name: 'Nordwood Greenhouse' },
-        arrow:      { src: 'nordwood-arrow.glb',      ios: 'nordwood-arrow.usdz',      name: 'Nordwood Arrow' },
-        classic:    { src: 'nordwood-classic.glb',    ios: 'nordwood-classic.usdz',    name: 'Nordwood Classic' },
-        arrowMini:  { src: 'nordwood-arrow-mini.glb', ios: 'nordwood-arrow-mini.usdz', name: 'Nordwood Arrow Mini' },
+        greenhouse: { src: 'models/nordwood-tshape.glb',     ios: 'models/nordwood-tshape.usdz',     name: 'Nordwood Greenhouse' },
+        arrow:      { src: 'models/nordwood-arrow.glb',      ios: 'models/nordwood-arrow.usdz',      name: 'Nordwood Arrow' },
+        classic:    { src: 'models/nordwood-classic.glb',    ios: 'models/nordwood-classic.usdz',    name: 'Nordwood Classic' },
+        arrowMini:  { src: 'models/nordwood-arrow-mini.glb', ios: 'models/nordwood-arrow-mini.usdz', name: 'Nordwood Arrow Mini' },
         heritage:   { src: 'nordwood.glb',            ios: null,                       name: 'Heritage Nord' }
       };
       var ftin = function (m) { var t = Math.round(m / 0.0254); return Math.floor(t / 12) + '\u2032 ' + (t % 12) + '\u2033'; };

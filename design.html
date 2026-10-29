@@ -299,6 +299,7 @@ html:has(.wait),body:has(.wait){background:#fff}
 .play{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:rgba(0,147,74,.94);box-shadow:0 0 0 10px rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;z-index:2}
 .play svg{width:30px;height:30px;margin-left:5px;fill:#fff}
 </style>
+<script src="ar-fallback.js?v=3"></script>
 </head>
 <body>
 <div id="doc"></div>
@@ -2639,13 +2640,13 @@ var CONFIG = {
   weeks: [12,14],
   arBase: 'https://kasparstidomanis-dotcom.github.io/nordwood-ar/ar.html',   // B2B share page only; the design page never links to it
   arFiles: {
-    greenhouse: { glb:'nordwood-tshape.glb',     usdz:'nordwood-tshape.usdz' },
-    classic:    { glb:'nordwood-classic.glb',    usdz:'nordwood-classic.usdz' },
-    arrow:      { glb:'nordwood-arrow.glb',      usdz:'nordwood-arrow.usdz' },
-    arrowMini:  { glb:'nordwood-arrow-mini.glb', usdz:'nordwood-arrow-mini.usdz' },
+    greenhouse: { glb:'models/nordwood-tshape.glb',     usdz:'models/nordwood-tshape.usdz' },
+    classic:    { glb:'models/nordwood-classic.glb',    usdz:'models/nordwood-classic.usdz' },
+    arrow:      { glb:'models/nordwood-arrow.glb',      usdz:'models/nordwood-arrow.usdz' },
+    arrowMini:  { glb:'models/nordwood-arrow-mini.glb', usdz:'models/nordwood-arrow-mini.usdz' },
     heritage:   { glb:'nordwood.glb',            usdz:null }
   },
-  arSky: 'nordwood-sky.hdr',
+  arSky: 'neutral',
   // Lookup service. Empty = no live data (local testing). Endpoints: GET {api}/design/{id}, POST {api}/design/{id}/placement, POST {api}/design/{id}/open
   api: '',
   footprints: {"greenhouse": {"img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANoAAAEUCAYAAABNiCirAAACnUlEQVR42u3WsQ2DMBCGUS5iBoajZAXmYAWXDMcSf1qUCoooCn6vI53P+XSuoSNJMsAPvIwAhAaPMPZ68KnNm+vnm45lX2008HQEoQFCA6GB0AChgdAAoYHQQGiA0EBogNBAaCA0QGggNBAaIDQQGiA0EBoIDRAaCA0QGggNhAYIDYQGQgOEBkIDhAZCA6EBQgOhgdCMAIQGQgOEBkIDoQFCA6EBQgOhgdAAoYHQQGiA0EBowAVjkhgD2GggNODC0/H8MbV5MxKw0UBogNBAaCA0QGggNEBoIDQQGiA0EBoIDRAaCA0QGggNhAYIDYQGQgOEBkIDhAZCA6EBQgOhAUIDoYHQAKGB0EBogNBAaIDQQGggNEBoIDRAaCA0EBogNBAaCA0QGggNEBoIDYQGCA2EBggNhAZCA4QGQgOhAUIDoQFCA6GB0AChgdAAoYHQQGiA0EBoIDRAaCA0QGggNBAaIDQQGiA0EBoIDRAaCA2EBggNhAYIDYQGQgOEBkIDhAZCA6EBQgOhgdAAoYHQAKGB0EBogNBAaCA0QGggNEBoIDQQGiA0EBogNBAaCA0QGggNhAYIDYQGCA2EBkIDhAZCA4QGQgOhAUIDoYHQAKGB0AChgdBAaIDQQGiA0EBoIDRAaCA0EBogNBAaIDQQGggNEBr8h/H8cSz72svBpzZvrh8bDYQG3Ho6VlX1ctgkceXYaCA0QGggNBAaIDQQGiA0EBoIDRAaCA0QGggNhAYIDYQGQgOEBkIDhAZCA6EBQgOhAUIDoYHQAKGB0EBogNBAaIDQQGggNEBoIDRAaCA0EBogNBAaCA0QGggNEBoIDYQGCA2EBggNhAYPUj0dNklc+T1Tm7fP345lX01GaELD0xFsNLi5+avKf+iCN75kJ7pfKhdEAAAAAElFTkSuQmCC", "wFt": 14.3, "lFt": 18.11}, "classic": {"img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJ4AAAD2CAYAAAAnIj5MAAACAklEQVR42u3VsRFAQBCGUWvUcMUJtXB1aOFCxWlipcaMQUDivYzwn29uIzOzg4/1JkB4/Maw/yhtnE3CW9ZpqV48nFqEB8JDeCA8hAfCQ3ggPIQHwkN4CA+Eh/BAeAgPhIfwQHgID4SH8BAeCA/hgfAQHggP4YHwEB7CMwHCQ3ggPIQHwkN4IDyEB8JDeAgPhIfwQHgID4SH8EB4CA+Eh/AQHggP4YHwEB4ID+GB8BAeCA/hITwQHsID4SE8EB7CA+EhPBAewkN4IDyEB8JDeCA8hAfCQ3ggPISH8EB4CA+Eh/BAeAgPhIfwQHgID+GB8BAeCA/hgfAQHggP4YHwEB7CA+EhPBAewgPhITwQHsJDeCZAeAgPhIfwQHgID4SH8EB4CA/hgfAQHggP4YHwEB4ID+GB8BAewgPhITwQHsID4SE8EB7CA+EhPIQHwkN4IDyEB8JDeCA8hAfCQ3gID4SH8EB4CA+Eh/BAeAgPhIfwEB4ID+GB8BAeCA/hgfAQHggP4SE8EB7CA+EhPBAewgPhITwQHsJDeCA8hAfCQ3ggPIQHwkN4CM8ECA/hgfAQHggP4YHwEB4ID+EhPBAewgPhITwQHsID4SE8EB7CQ3ggPIQHwkN4IDyEB8JDeCA8hMdfRWamGe4rbZyP/9ZpqZYRHk4tnLx4Jrj25CpEhE1v2ACWXBnfi1qaWQAAAABJRU5ErkJggg==", "wFt": 10.37, "lFt": 16.14}, "arrow": {"img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAC6CAYAAABm30UAAAABgElEQVR42u3VsQ2AMAxFQYyYgeFSZoXMkRUoGY4lTIvoaPFdB12+npLIzFwoazWBAChse37sR5sm+b+rn8MNgAAQgABMIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACEIAJBIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAAAjCBABAAVUVmZrVD70eb739XP4cA8ARQ7AaoctAvN11ElNnlBh9DGWeytg99AAAAAElFTkSuQmCC", "wFt": 8.4, "lFt": 12.2}, "heritage": {"img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMEAAADoCAYAAABW4YBiAAADEElEQVR42u3dwXEiMRBAUTVFDA7OR1IgDqfgI8GRRPvggnIN4BooGKTp9457Gmv5brE7JUUbQGbmCM8ZETHy879iHXr+2U/PGQKgsoiIjQCobjvaA398f3719DzH3WE/8vMvuQ49/OzXnrPr7dB0Eqz1A8T7Quh+OyQAlrCxBIgARAAiABGM9o0eTAIQARSJ4NYLaWASgAhABCACEAGIAEQAIgARgAhABCACEAGIAFYcgRPoMAlABPD63YYT6DAJLAEigGKmuwoRYBJYAkQAIgARQGnnO8seeUXh3hPivAZBtxE8+uH0ocZ2CAY0Peb/6hWu/72i8Kx7ArwGQXffCeZ+OH14sR2CFRnqHmMwCUAEIAIQAYgARAAiABGACEAEIAIQAYgARAAiABGACEAEIAIQAYgARAAiABGACEAEIAIQATwqM1MEmASWABFAMdOLZkSASWAJEAGIAEQAIgARgAhABFDGcXfYiwBEACKA1lprEREiwCSwBIgARAAiABGACEAEIAIQAYgARAAiABGACEAEIAIQAVTikg4wCUAEFOSSDjAJQAQgAhABiABEACIAEYAIQAQgAhABiICK3F4JJgGIAM7cXgkmAYgARAAiQASZmZYBkwBEACJorV2ezAUmAYgARAAiABGACEAEIAIQAayU2yvBJAARUJDbK8EkABGACEAEcCuC6Wm9YBKACGB9Lu4niIiwLJgEIAKoyf0EYBKACEAEIAJEYAkQAYgARAAiABGACEAEIAIQAYgARAAiABGACEAEIAIQAYgARAAiABGACEAEUEJmpggobzv9g3fcWza9YRyWFKeR0PuDCoVn+vvL3nYI26HWfm/reMcXEstPl98JFtuHzQhPKCzBdggRWAJEACIAEYAIoJLpWxEiwCQYtV6wHYIniIgQASZB75X6K8J2CEQAIgARgAhABCACEAGIAEQAIgARgAigWgQO38IkABGACM4czY5JACIAEYAIQARQOQIn0PEqXZ/r43+M57v2T8h+ccwIoPfDrUTAEhE4gQ4hWIJx3TMp/UK57QcYuqkA2MydvgAAAABJRU5ErkJggg==", "wFt": 12.66, "lFt": 15.22}},
@@ -2897,7 +2898,7 @@ function setupLiveAR(root){
       var vf=box.closest('.arframe'); if(vf) vf.classList.add('live'); return;
     }
     box.innerHTML='<model-viewer src="'+f.glb+'"'+(f.usdz?' ios-src="'+f.usdz+'"':'')+' alt="The '+name+', at real size"'+
-      ' ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor" camera-controls touch-action="pan-y" auto-rotate rotation-per-second="14deg"'+
+      ' ar ar-modes="scene-viewer webxr quick-look" ar-scale="fixed" ar-placement="floor" camera-controls touch-action="pan-y" auto-rotate rotation-per-second="14deg"'+
       ' interaction-prompt="none" camera-orbit="35deg 72deg auto" max-camera-orbit="auto 88deg auto" shadow-intensity="1" shadow-softness="0.8"'+
       ' exposure="1.05" tone-mapping="neutral" environment-image="'+CONFIG.arSky+'"><span slot="ar-button" hidden></span></model-viewer>'+
       '<p class="arhint">'+icon('tap')+'<span>Tap the Nordwood to place it</span></p>';
@@ -2907,9 +2908,9 @@ function setupLiveAR(root){
     mv.addEventListener('pointerdown',function(e){ down={x:e.clientX,y:e.clientY}; });
     mv.addEventListener('click',function(e){ var moved=down?Math.abs(e.clientX-down.x)+Math.abs(e.clientY-down.y):0; down=null;
       var inAR=mv.getAttribute('ar-status')&&mv.getAttribute('ar-status')!=='not-presenting';
-      if(moved<10&&mv.canActivateAR&&!inAR) mv.activateAR(); });
-    if(btn) btn.addEventListener('click',function(){ if(mv.canActivateAR) mv.activateAR(); });
-    mv.addEventListener('load',function(){ if(!mv.canActivateAR){ box.querySelector('.arhint span').textContent='Open this on your phone to place it in your yard'; if(btn) btn.hidden=true; } },{once:true});
+      if (moved < 10 && !inAR) nwAR(mv); });
+    if(btn) btn.addEventListener('click',function(){ nwAR(mv); });
+    mv.addEventListener('load',function(){ if (!mv.canActivateAR && !nwMobile()){ box.querySelector('.arhint span').textContent='Open this on your phone to place it in your yard'; if(btn) btn.hidden=true; } },{once:true});
   });
   loadModelViewer();
   setupMatchSwitch(root);
