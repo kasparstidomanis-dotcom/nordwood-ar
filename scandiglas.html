@@ -53,6 +53,11 @@ h1 em{font-family:var(--ygh-font-highlight);font-style:normal;font-weight:800;ba
 .ar-go{width:100%;margin-top:18px}
 .back{display:inline-block;margin-top:26px;color:var(--ygh-green);font:600 15px/1.3 var(--ygh-font-body);text-decoration:underline;text-underline-offset:3px}
 @media (max-width:749px){h1{font-size:30px}.btn{width:100%}}
+.sgopts{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:14px}
+.sgsel{display:flex;align-items:center;gap:8px;font:600 14px/1.2 var(--ygh-font-body);color:var(--ygh-green-dark)}
+.sgsel select{font:500 15px/1.2 var(--ygh-font-body);padding:9px 12px;border-radius:10px;border:1.5px solid var(--ygh-shadow);background:#fff;color:#222;min-width:150px}
+.sgchk{display:flex;align-items:center;gap:6px;font:600 14px/1.2 var(--ygh-font-body);color:var(--ygh-green-dark)}
+.sgchk input{width:18px;height:18px;accent-color:var(--ygh-green)}
 </style>
 <script src="ar-fallback.js?v=4"></script>
 </head>
@@ -71,12 +76,16 @@ h1 em{font-family:var(--ygh-font-highlight);font-style:normal;font-weight:800;ba
     </model-viewer>
     <button type="button" class="mnav mnav--prev" id="mPrev" aria-label="Previous model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <button type="button" class="mnav mnav--next" id="mNext" aria-label="Next model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-    <p class="arv__hint" id="arHint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a5.5 5.5 0 0 1-5.5 5.5h-1.2a5 5 0 0 1-3.9-1.9L5 15.5a1.5 1.5 0 0 1 2.3-1.9L9 15.5"/></svg><span>Tap the Nordwood to place it</span></p>
+    <p class="arv__hint" id="arHint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a5.5 5.5 0 0 1-5.5 5.5h-1.2a5 5 0 0 1-3.9-1.9L5 15.5a1.5 1.5 0 0 1 2.3-1.9L9 15.5"/></svg><span>Tap the greenhouse to place it</span></p>
   </div>
   <div class="mcap" aria-live="polite">
     <p class="mcap__name" id="mName">Scandiglas T-Shape</p>
     <p class="mcap__size" id="mSize">&nbsp;</p>
     <div class="mdots" id="mDots"></div>
+    <div class="sgopts">
+      <label class="sgsel"><span>Size</span><select id="sgSize"></select></label>
+      <label class="sgchk"><input type="checkbox" id="sgCrest" checked> Roof crest</label>
+    </div>
   </div>
   <button type="button" class="btn ar-go" id="arGo">See it in my yard <svg><use href="#arr"/></svg></button>
   <ol class="how">
@@ -88,38 +97,46 @@ h1 em{font-family:var(--ygh-font-highlight);font-style:normal;font-weight:800;ba
 </main>
 <script>
 (function(){
-  var SQFT = { tshapeDecor: 178, classicDecor: 153, tshape: 178, classic: 153 };
-  var MODELS = {
-    tshapeDecor:  { src: 'models/scandiglas-tshape-decor-sv.glb',  ios: 'models/scandiglas-tshape-decor.usdz',  name: 'Scandiglas T-Shape' },
-    classicDecor: { src: 'models/scandiglas-classic-decor-sv.glb', ios: 'models/scandiglas-classic-decor.usdz', name: 'Scandiglas Classic' },
-    tshape:       { src: 'models/scandiglas-tshape-sv.glb',        ios: 'models/scandiglas-tshape.usdz',        name: 'Scandiglas T-Shape, no crest' },
-    classic:      { src: 'models/scandiglas-classic-sv.glb',       ios: 'models/scandiglas-classic.usdz',       name: 'Scandiglas Classic, no crest' }
+  var FAM = {
+    classic: { name: 'Scandiglas Greenhouse', sizes: [
+      ['7-9-7-9',  "7'9\" x 7'9\"", 60], ['7-9-10-2', "7'9\" x 10'2\"", 80], ['7-9-12-7', "7'9\" x 12'7\"", 100], ['7-9-19-11', "7'9\" x 19'11\"", 154],
+      ['10-2-7-9', "10'2\" x 7'9\"", 78], ['10-2-10-2', "10'2\" x 10'2\"", 103], ['10-2-12-7', "10'2\" x 12'7\"", 128], ['10-2-15-1', "10'2\" x 15'1\"", 153],
+      ['10-2-17-6', "10'2\" x 17'6\"", 178], ['10-2-19-11', "10'2\" x 19'11\"", 203] ], def: '10-2-15-1' },
+    tshape: { name: 'Scandiglas T-Shape Orangerie', sizes: [ ['t178', "12'7\" x 15'1\"", 178], ['t252', "15'1\" x 19'11\"", 252] ], def: 't252' }
   };
-  var ALIAS = { 't-shape': 'tshapeDecor', 't': 'tshapeDecor', 'tshape-decor': 'tshapeDecor', 'classic-decor': 'classicDecor' };
-  var BASE = ['tshapeDecor', 'classicDecor', 'tshape', 'classic'];
-  /* ?model= puts their match first; the others follow in the usual order */
-  var want = new URLSearchParams(location.search).get('model') || '';
-  want = ALIAS[want] || want;
-  var ORDER = MODELS[want] ? [want].concat(BASE.filter(function (x) { return x !== want; })) : BASE.slice();
+  var ORDER = ['tshape', 'classic'];
+  var q = new URLSearchParams(location.search);
+  var want = (q.get('model') || '').toLowerCase();
+  if (/^(classic|rect|greenhouse)/.test(want)) ORDER = ['classic', 'tshape'];
+  var wantSize = q.get('size');            // e.g. 10-2-15-1, t178
+  if (q.get('crest') === '0') document.getElementById('sgCrest').checked = false;
   if (document.referrer || history.length > 1) document.getElementById('back').hidden = false;
-
-  var mv = document.getElementById('mv'), cur = 0;
-  var size = document.getElementById('mSize'), nameEl = document.getElementById('mName'), dots = document.getElementById('mDots');
-  ORDER.forEach(function (id, i) {
-    var d = document.createElement('button'); d.type = 'button'; d.setAttribute('aria-label', MODELS[id].name);
-    d.addEventListener('click', function (e) { e.stopPropagation(); go(i); });
-    dots.appendChild(d);
+  var mv = document.getElementById('mv'), cur = 0, sel = document.getElementById('sgSize'), crest = document.getElementById('sgCrest');
+  var nameEl = document.getElementById('mName'), sizeEl = document.getElementById('mSize'), dots = document.getElementById('mDots');
+  var chosen = {}; ORDER.forEach(function (f) { chosen[f] = FAM[f].def; });
+  if (wantSize) ORDER.forEach(function (f) { FAM[f].sizes.forEach(function (z) { if (z[0] === wantSize) { chosen[f] = wantSize; if (ORDER[0] !== f) ORDER.reverse(); } }); });
+  ORDER.forEach(function (f, i) {
+    var d = document.createElement('button'); d.type = 'button'; d.setAttribute('aria-label', FAM[f].name);
+    d.addEventListener('click', function (e) { e.stopPropagation(); go(i); }); dots.appendChild(d);
   });
-  function go(i) {
-    cur = (i + ORDER.length) % ORDER.length;
-    var id = ORDER[cur], m = MODELS[id];
-    nameEl.textContent = m.name;
-    [].forEach.call(dots.children, function (d, k) { d.setAttribute('aria-current', k === cur); });
-    size.innerHTML = SQFT[id] ? SQFT[id] + ' sq ft' : '&nbsp;';
-    if (m.ios) mv.setAttribute('ios-src', m.ios); else mv.removeAttribute('ios-src');
-    mv.alt = 'The ' + m.name + ', at real size';
-    mv.setAttribute('src', m.src);
+  function load() {
+    var f = ORDER[cur], k = chosen[f], z = FAM[f].sizes.filter(function (x) { return x[0] === k; })[0];
+    var id = (k.charAt(0) === 't' ? k : 'rect-' + k) + (crest.checked ? '-decor' : '');
+    nameEl.textContent = FAM[f].name;
+    sizeEl.textContent = z[1] + ' \u00b7 ' + z[2] + ' sq ft';
+    mv.alt = 'The ' + FAM[f].name + ' ' + z[1] + ', at real size';
+    mv.setAttribute('ios-src', 'models/scandiglas/sg-' + id + '.usdz');
+    mv.setAttribute('src', 'models/scandiglas/sg-' + id + '.glb');
   }
+  function go(i) {
+    cur = (i + ORDER.length) % ORDER.length; var f = ORDER[cur];
+    [].forEach.call(dots.children, function (d, k) { d.setAttribute('aria-current', k === cur); });
+    sel.innerHTML = '';
+    FAM[f].sizes.forEach(function (z) { var o = document.createElement('option'); o.value = z[0]; o.textContent = z[1] + ' (' + z[2] + ' sq ft)'; if (z[0] === chosen[f]) o.selected = true; sel.appendChild(o); });
+    load();
+  }
+  sel.addEventListener('change', function () { chosen[ORDER[cur]] = sel.value; load(); });
+  crest.addEventListener('change', load);
   mv.addEventListener('load', function () {
     if (!mv.canActivateAR && !nwMobile()) {
       document.getElementById('arHint').lastChild.textContent = 'Open on your phone to place it';
