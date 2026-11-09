@@ -136,8 +136,8 @@ h1 em{font-family:var(--ygh-font-highlight);font-style:normal;font-weight:800;ba
     nameEl.textContent = FAM[f].name;
     sizeEl.textContent = z[1] + ' \u00b7 ' + z[2] + ' sq ft';
     mv.alt = 'The ' + FAM[f].name + ' ' + z[1] + ', at real size';
-    mv.setAttribute('ios-src', 'models/scandiglas/sg-' + id + '.usdz');
-    mv.setAttribute('src', 'models/scandiglas/sg-' + id + '.glb');
+    mv.setAttribute('ios-src', 'models/scandiglas/sg-' + id + '.usdz?v=pad2');
+    mv.setAttribute('src', 'models/scandiglas/sg-' + id + '.glb?v=pad2');
   }
   function go(i) {
     cur = (i + ORDER.length) % ORDER.length; var f = ORDER[cur];

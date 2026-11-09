@@ -694,11 +694,11 @@ footer{padding:28px 20px;background:var(--ygh-green-dark);border-top:1px solid r
       // official floor area per model, in sq ft. Fill these in from the spec sheet; a model left at null shows no size line.
       var SQFT = { greenhouse: 206, classic: 148, arrow: 88, arrowMini: 58, heritage: 174 };
       var MODELS = {
-        greenhouse: { src: 'models/nordwood-tshape-sv.glb',     ios: 'models/nordwood-tshape.usdz',     name: 'Nordwood Greenhouse' },
-        arrow:      { src: 'models/nordwood-arrow-sv.glb',      ios: 'models/nordwood-arrow.usdz',      name: 'Nordwood Arrow' },
-        classic:    { src: 'models/nordwood-classic-sv.glb',    ios: 'models/nordwood-classic.usdz',    name: 'Nordwood Classic' },
-        arrowMini:  { src: 'models/nordwood-arrow-mini-sv.glb', ios: 'models/nordwood-arrow-mini.usdz', name: 'Nordwood Arrow Mini' },
-        heritage:   { src: 'nordwood.glb',            ios: null,                       name: 'Heritage Nord' }
+        greenhouse: { src: 'models/nordwood-tshape-sv.glb?v=pad2',     ios: 'models/nordwood-tshape.usdz?v=pad2',     name: 'Nordwood Greenhouse' },
+        arrow:      { src: 'models/nordwood-arrow-sv.glb?v=pad2',      ios: 'models/nordwood-arrow.usdz?v=pad2',      name: 'Nordwood Arrow' },
+        classic:    { src: 'models/nordwood-classic-sv.glb?v=pad2',    ios: 'models/nordwood-classic.usdz?v=pad2',    name: 'Nordwood Classic' },
+        arrowMini:  { src: 'models/nordwood-arrow-mini-sv.glb?v=pad2', ios: 'models/nordwood-arrow-mini.usdz?v=pad2', name: 'Nordwood Arrow Mini' },
+        heritage:   { src: 'nordwood.glb?v=pad2',            ios: null,                       name: 'Heritage Nord' }
       };
       var ftin = function (m) { var t = Math.round(m / 0.0254); return Math.floor(t / 12) + '\u2032 ' + (t % 12) + '\u2033'; };
       // same rule as the design page: small spot = Arrow, growing = Classic, else Greenhouse; then step down to fit the budget
